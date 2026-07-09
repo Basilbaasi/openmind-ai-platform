@@ -1,0 +1,49 @@
+# ── Version Control ──────────────────────────────────────────────
+.git/
+.github/
+.gitignore
+
+# ── Python ───────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# ── Testing & Quality ───────────────────────────────────────────
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+benchmarks/
+
+# ── Documentation ───────────────────────────────────────────────
+docs/
+*.md
+!README.md
+
+# ── IDE & OS ────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Environment ─────────────────────────────────────────────────
+.env
+.env.example
+
+# ── Docker ──────────────────────────────────────────────────────
+docker/
+docker-compose.yml
+Dockerfile
+
+# ── Scripts ─────────────────────────────────────────────────────
+scripts/
