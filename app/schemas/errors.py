@@ -4,9 +4,7 @@ from pydantic import BaseModel, Field
 class ErrorDetail(BaseModel):
     """Details about a specific error."""
 
-    loc: list[str] | None = Field(
-        default=None, description="Location of the error in the request"
-    )
+    loc: list[str] | None = Field(default=None, description="Location of the error in the request")
     msg: str = Field(..., description="Human-readable error message")
     type: str = Field(..., description="Error type identifier")
 
