@@ -4,7 +4,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-brightgreen.svg)]()
+[![Version](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)]()
 
 A production-grade AI platform built with **FastAPI**, designed for scalability, modularity, and clean software architecture. OpenMind AI provides the backend foundation for intelligent services — from chat interfaces to multi-model orchestration.
 
@@ -111,6 +111,12 @@ mypy app/ --ignore-missing-imports
 |--------|------|-------------|
 | `GET` | `/` | Root discovery endpoint — returns welcome message, version, and docs link |
 | `GET` | `/health` | Health check — returns service status, version, environment, timestamp |
+| `POST` | `/chat` | Generates a complete mock chat response (blocking) |
+| `POST` | `/chat/stream` | Generates a streaming mock chat response (SSE) |
+| `GET` | `/models` | Retrieves the list of available mock AI models |
+| `POST` | `/sessions` | Creates a new mock conversation session |
+| `GET` | `/sessions` | Retrieves the list of mock active sessions |
+| `DELETE`| `/sessions/{id}`| Deletes a mock session |
 | `GET` | `/docs` | Interactive Swagger UI documentation |
 | `GET` | `/redoc` | Alternative ReDoc documentation |
 | `GET` | `/openapi.json` | Raw OpenAPI 3.1 schema |
@@ -127,7 +133,11 @@ openmind-ai-platform/
 ├── app/                        # Application source code
 │   ├── api/                    # HTTP layer
 │   │   ├── routes/             # Route handlers by domain
-│   │   │   └── health.py       # Health & root endpoints
+│   │   │   ├── health.py       # Health & root endpoints
+│   │   │   ├── chat.py         # Chat endpoints
+│   │   │   ├── models.py       # Model discovery endpoints
+│   │   │   └── sessions.py     # Session endpoints
+│   │   ├── errors.py           # Global exception handlers
 │   │   └── router.py           # Central router aggregator
 │   ├── core/                   # Cross-cutting concerns
 │   │   ├── config.py           # Pydantic Settings configuration
@@ -135,13 +145,26 @@ openmind-ai-platform/
 │   │   └── logging.py          # Structured logging setup
 │   ├── models/                 # Domain / ORM models (future)
 │   ├── schemas/                # Pydantic request/response DTOs
-│   │   └── health.py           # Health & root response schemas
-│   ├── services/               # Business logic services (future)
+│   │   ├── health.py           # Health & root response schemas
+│   │   ├── chat.py             # Chat request/response schemas
+│   │   ├── models.py           # Model metadata schemas
+│   │   ├── sessions.py         # Session management schemas
+│   │   └── errors.py           # API Error schema
+│   ├── services/               # Business logic services
+│   │   ├── chat_service.py     # Chat mocking & streaming service
+│   │   ├── model_service.py    # Model discovery mock service
+│   │   └── session_service.py  # Session mock service
 │   ├── storage/                # Data persistence layer (future)
 │   ├── utils/                  # Shared utilities
 │   └── main.py                 # Application factory & entry point
 │
 ├── tests/                      # Test suite
+│   ├── api/                    # API route tests
+│   │   ├── test_chat.py
+│   │   ├── test_models.py
+│   │   └── test_sessions.py
+│   ├── services/               # Service layer tests
+│   │   └── test_chat_service.py
 │   ├── conftest.py             # Shared fixtures (app, async_client)
 │   ├── test_health.py          # Health & root endpoint tests
 │   ├── test_config.py          # Configuration tests
@@ -150,7 +173,9 @@ openmind-ai-platform/
 ├── docs/                       # Documentation
 │   ├── architecture.md         # Architecture diagrams & design
 │   ├── api.md                  # API reference
-│   └── phase1-retrospective.md # Milestone 1 retrospective
+│   ├── phase1-retrospective.md # Milestone 1 retrospective
+│   ├── phase2-retrospective.md # Milestone 2 retrospective
+│   └── release-checklist-v0.2.0.md # Release readiness checklist
 │
 ├── benchmarks/                 # Performance benchmarks (future)
 ├── docker/                     # Additional Docker configs (future)
@@ -180,7 +205,7 @@ All configuration is managed via environment variables, loaded through [Pydantic
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `APP_NAME` | `OpenMind AI Platform` | Application display name |
-| `APP_VERSION` | `0.1.0` | Semantic version |
+| `APP_VERSION` | `0.2.0` | Semantic version |
 | `ENVIRONMENT` | `development` | `development` \| `staging` \| `production` |
 | `DEBUG` | `false` | Enable debug mode |
 | `HOST` | `0.0.0.0` | Server bind address |

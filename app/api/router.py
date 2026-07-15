@@ -12,7 +12,7 @@ To add a new feature:
 
 from fastapi import APIRouter
 
-from app.api.routes import health, chat, sessions, models
+from app.api.routes import chat, health, models, sessions
 
 api_router = APIRouter()
 
@@ -20,6 +20,6 @@ api_router = APIRouter()
 api_router.include_router(health.router)
 
 # ── Domain routes ────────────────────────────────────────────────
-api_router.include_router(chat.router,     prefix="/chat",     tags=["Chat"])
+api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
 api_router.include_router(sessions.router, prefix="/sessions", tags=["Sessions"])
-api_router.include_router(models.router,   prefix="/models",   tags=["Models"])
+api_router.include_router(models.router, prefix="/models", tags=["Models"])

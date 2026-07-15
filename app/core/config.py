@@ -24,7 +24,7 @@ class Settings(BaseSettings):
 
     # ── Application ──────────────────────────────────────────────────
     APP_NAME: str = "OpenMind AI Platform"
-    APP_VERSION: str = "0.1.0"
+    APP_VERSION: str = "0.2.0"
     APP_DESCRIPTION: str = "A production-grade AI platform providing intelligent services."
     ENVIRONMENT: Literal["development", "staging", "production"] = "development"
     DEBUG: bool = False

@@ -1,15 +1,16 @@
-from typing import List
+
 from app.schemas.models import ModelMetadata
+
 
 class ModelService:
     """
     Service responsible for model discovery and management.
     """
-    
-    async def list_models(self) -> List[ModelMetadata]:
+
+    async def list_models(self) -> list[ModelMetadata]:
         """
         Retrieves the list of available models.
-        
+
         Currently returns deterministic mock data. In future milestones,
         this will query active providers (local or remote) to discover models dynamically.
         """
@@ -21,7 +22,7 @@ class ModelService:
                 version="1.0",
                 capabilities=["chat"],
                 max_context_length=8192,
-                available=True
+                available=True,
             ),
             ModelMetadata(
                 id="mock-reasoning-v1",
@@ -30,10 +31,11 @@ class ModelService:
                 version="1.0",
                 capabilities=["chat", "reasoning"],
                 max_context_length=32768,
-                available=True
-            )
+                available=True,
+            ),
         ]
         return mock_models
+
 
 # Dependency provider for FastAPI
 def get_model_service() -> ModelService:

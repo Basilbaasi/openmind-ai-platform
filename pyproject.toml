@@ -21,7 +21,7 @@ select = [
     "S",    # flake8-bandit (security)
     "T20",  # flake8-print
 ]
-ignore = ["S104"]  # Allow binding to 0.0.0.0
+ignore = ["S104", "B008"]  # Allow binding to 0.0.0.0, allow Depends() in defaults
 
 [tool.ruff.lint.per-file-ignores]
 "test_*" = ["S101"]  # Allow assert in test files

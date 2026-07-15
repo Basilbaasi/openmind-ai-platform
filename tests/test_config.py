@@ -20,9 +20,9 @@ class TestSettingsDefaults:
         assert settings.APP_NAME == "OpenMind AI Platform"
 
     def test_default_version(self):
-        """Default APP_VERSION should be '0.1.0'."""
+        """Default APP_VERSION should be '0.2.0'."""
         settings = Settings()
-        assert settings.APP_VERSION == "0.1.0"
+        assert settings.APP_VERSION == "0.2.0"
 
     def test_default_environment(self):
         """Default ENVIRONMENT should be 'development'."""
@@ -31,8 +31,7 @@ class TestSettingsDefaults:
 
     def test_default_debug(self):
         """Default DEBUG should be False."""
-        settings = Settings(_env_file=None, _env_file_encoding=None, DEBUG=False)
-        # We explicitly pass DEBUG=False to test the model's type/handling or we can just test the model_fields default
+        # We explicitly pass DEBUG=False to avoid loading from .env
         assert Settings.model_fields["DEBUG"].default is False
 
     def test_default_host(self):

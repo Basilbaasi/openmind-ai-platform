@@ -26,7 +26,7 @@ RUN python -m venv /opt/venv && \
 FROM python:3.11-slim AS runtime
 
 LABEL maintainer="OpenMind AI Team" \
-      version="0.1.0" \
+      version="0.2.0" \
       description="OpenMind AI Platform – Backend API"
 
 # Prevent Python from writing .pyc files and enable unbuffered output

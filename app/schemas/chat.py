@@ -1,8 +1,7 @@
-import uuid
-from typing import List, Optional
 from enum import Enum
-from datetime import datetime, timezone
+
 from pydantic import BaseModel, Field
+
 
 class RoleEnum(str, Enum):
     system = "system"
@@ -10,21 +9,29 @@ class RoleEnum(str, Enum):
     assistant = "assistant"
     tool = "tool"
 
+
 class ChatMessage(BaseModel):
     role: RoleEnum = Field(..., description="Role of the message author")
     content: str = Field(..., description="Content of the message")
+
 
 class TokenUsage(BaseModel):
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
 
+
 class ChatRequest(BaseModel):
-    messages: List[ChatMessage] = Field(..., description="A list of previous messages in the conversation")
+    messages: list[ChatMessage] = Field(
+        ..., description="A list of previous messages in the conversation"
+    )
     model: str = Field("default", description="The ID of the model to use")
-    session_id: Optional[str] = Field(None, description="Optional session ID to associate this conversation")
+    session_id: str | None = Field(
+        None, description="Optional session ID to associate this conversation"
+    )
     temperature: float = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
-    max_tokens: Optional[int] = Field(None, description="Maximum number of tokens to generate")
+    max_tokens: int | None = Field(None, description="Maximum number of tokens to generate")
+
 
 class ChatResponse(BaseModel):
     id: str = Field(..., description="Unique identifier for the chat completion")
@@ -34,7 +41,8 @@ class ChatResponse(BaseModel):
     message: ChatMessage = Field(..., description="The generated message")
     finish_reason: str = Field(..., description="Reason why the model stopped generating")
     usage: TokenUsage = Field(..., description="Token usage statistics")
-    session_id: Optional[str] = Field(None, description="The session ID, if provided or generated")
+    session_id: str | None = Field(None, description="The session ID, if provided or generated")
+
 
 class ChatStreamResponse(BaseModel):
     id: str = Field(..., description="Unique identifier for the chat completion")
@@ -42,5 +50,8 @@ class ChatStreamResponse(BaseModel):
     created: int = Field(..., description="Unix timestamp of when the response was created")
     model: str = Field(..., description="The model used for completion")
     chunk: str = Field(..., description="The generated text chunk")
-    finish_reason: Optional[str] = Field(None, description="Reason why the model stopped generating (only present in the final chunk)")
-    session_id: Optional[str] = Field(None, description="The session ID, if provided or generated")
+    finish_reason: str | None = Field(
+        None,
+        description="Reason why the model stopped generating (only present in the final chunk)",
+    )
+    session_id: str | None = Field(None, description="The session ID, if provided or generated")
