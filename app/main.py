@@ -11,6 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
+from app.api.errors import add_exception_handlers
 from app.core.config import get_settings
 from app.core.lifespan import lifespan
 
@@ -49,6 +50,9 @@ def create_application() -> FastAPI:
 
     # ── Routers ──────────────────────────────────────────────────────
     application.include_router(api_router)
+
+    # ── Exception Handlers ───────────────────────────────────────────
+    add_exception_handlers(application)
 
     return application
 

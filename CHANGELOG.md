@@ -5,6 +5,17 @@ All notable changes to the OpenMind AI Platform will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-07-15
+
+### Added
+- **API Contracts**: Introduced robust Pydantic schemas for the Chat, Models, and Sessions domains.
+- **Service Layer**: Created decoupled `ChatService`, `ModelService`, and `SessionService` returning deterministic mock data.
+- **Chat Domain**: `POST /chat` (blocking) and `POST /chat/stream` (Server-Sent Events streaming).
+- **Models Domain**: `GET /models` endpoint for AI model discovery.
+- **Sessions Domain**: `POST /sessions`, `GET /sessions`, and `DELETE /sessions/{session_id}` for conversation management.
+- **Error Handling**: Implemented a global exception handler ensuring all endpoints return a standardized `APIError` schema.
+- **Testing**: Added comprehensive integration tests for all new endpoints and services.
+
 ## [0.1.0] — 2026-07-09
 
 ### Added

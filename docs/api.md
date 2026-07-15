@@ -1,6 +1,6 @@
 # OpenMind AI Platform — API Reference
 
-> **Version:** 0.1.0 (Backend Foundation)
+> **Version:** 0.2.0 (API Contract Design)
 >
 > **Base URL:** `http://localhost:8000`
 
@@ -12,6 +12,9 @@ This document describes every endpoint currently available in the OpenMind AI Pl
 
 - [Root Endpoint](#root-endpoint)
 - [Health Check](#health-check)
+- [Chat Domain](#chat-domain)
+- [Models Domain](#models-domain)
+- [Sessions Domain](#sessions-domain)
 - [API Documentation](#api-documentation)
 - [OpenAPI Schema](#openapi-schema)
 - [Error Responses](#error-responses)
@@ -140,6 +143,144 @@ livenessProbe:
 
 ---
 
+## Chat Domain
+
+### POST /chat
+
+Generates a complete chat response (blocking request).
+
+**Request:**
+
+```json
+{
+  "messages": [
+    {"role": "user", "content": "Hello!"}
+  ],
+  "model": "gpt-4",
+  "temperature": 0.7
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "id": "chatcmpl-12345",
+  "object": "chat.completion",
+  "created": 1677652288,
+  "model": "gpt-4",
+  "message": {
+    "role": "assistant",
+    "content": "This is a deterministic mock response from the ChatService."
+  },
+  "finish_reason": "stop",
+  "usage": {
+    "prompt_tokens": 10,
+    "completion_tokens": 12,
+    "total_tokens": 22
+  }
+}
+```
+
+### POST /chat/stream
+
+Generates a streaming chat response using Server-Sent Events (SSE).
+
+**Response:** Content-Type: `text/event-stream`
+
+```text
+data: {"id": "chatcmpl-12345", "object": "chat.completion.chunk", "created": 1677652288, "model": "gpt-4", "chunk": "This ", "finish_reason": null}
+
+data: {"id": "chatcmpl-12345", "object": "chat.completion.chunk", "created": 1677652288, "model": "gpt-4", "chunk": "is ", "finish_reason": null}
+
+data: [DONE]
+```
+
+---
+
+## Models Domain
+
+### GET /models
+
+Retrieves the list of available models.
+
+**Response (200 OK):**
+
+```json
+{
+  "models": [
+    {
+      "id": "mock-chat-v1",
+      "name": "Mock Chat Model Fast",
+      "provider": "local",
+      "version": "1.0",
+      "capabilities": ["chat"],
+      "max_context_length": 8192,
+      "available": true
+    }
+  ],
+  "total": 1
+}
+```
+
+---
+
+## Sessions Domain
+
+### POST /sessions
+
+Creates a new conversation session.
+
+**Request:**
+
+```json
+{
+  "title": "My Session",
+  "metadata": {"tag": "important"}
+}
+```
+
+**Response (201 Created):**
+
+```json
+{
+  "id": "uuid-string-here",
+  "title": "My Session",
+  "created_at": "2026-07-15T12:00:00Z",
+  "updated_at": "2026-07-15T12:00:00Z",
+  "metadata": {"tag": "important"}
+}
+```
+
+### GET /sessions
+
+Lists existing conversation sessions.
+
+**Response (200 OK):**
+
+```json
+{
+  "sessions": [
+    {
+      "id": "uuid-string-here",
+      "title": "My Session",
+      "created_at": "2026-07-15T12:00:00Z",
+      "updated_at": "2026-07-15T12:00:00Z",
+      "metadata": {}
+    }
+  ],
+  "total": 1
+}
+```
+
+### DELETE /sessions/{session_id}
+
+Deletes a conversation session.
+
+**Response (204 No Content):** Empty body.
+
+---
+
 ## API Documentation
 
 FastAPI automatically generates interactive API documentation from the route definitions and Pydantic schemas.
@@ -214,39 +355,39 @@ curl -s http://localhost:8000/openapi.json | python -m json.tool
 
 ## Error Responses
 
-### 404 Not Found
+The platform uses a standardized `APIError` schema for all HTTP and validation errors.
 
-Returned when accessing an undefined route.
+### 422 Validation Error Example
 
 ```json
 {
-    "detail": "Not Found"
+  "error_type": "validation_error",
+  "message": "The request payload is invalid.",
+  "details": [
+    {
+      "loc": ["body", "messages"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
 }
 ```
 
-### 405 Method Not Allowed
-
-Returned when using an unsupported HTTP method on a defined route.
+### 404 Not Found Example
 
 ```json
 {
-    "detail": "Method Not Allowed"
+  "error_type": "http_error",
+  "message": "Session mock-id not found."
 }
 ```
 
-### 422 Unprocessable Entity
-
-Returned when request validation fails (relevant for future endpoints with request bodies).
+### 500 Internal Server Error Example
 
 ```json
 {
-    "detail": [
-        {
-            "loc": ["body", "field_name"],
-            "msg": "Field required",
-            "type": "missing"
-        }
-    ]
+  "error_type": "internal_server_error",
+  "message": "An unexpected internal error occurred."
 }
 ```
 

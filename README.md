@@ -8,8 +8,8 @@
 
 A production-grade AI platform built with **FastAPI**, designed for scalability, modularity, and clean software architecture. OpenMind AI provides the backend foundation for intelligent services — from chat interfaces to multi-model orchestration.
 
-> **Current Release: v0.1.0 — Backend Foundation**
-> The project infrastructure is complete: application factory, structured logging, health monitoring, Docker support, CI pipeline, and comprehensive test suite.
+> **Current Release: v0.2.0 — API Contract Design**
+> The platform now features stable public API contracts for the Chat, Models, and Sessions domains. These APIs return deterministic mock data and provide a robust foundation for the frontend team to begin concurrent development. The architecture introduces a decoupled Service Layer, standardizing request/response formats independent of any AI provider.
 
 ---
 
@@ -219,7 +219,7 @@ Each layer communicates only with the layer directly below it. See [docs/archite
 | Phase | Milestone | Status | Description |
 |-------|-----------|--------|-------------|
 | 1 | M1: Backend Foundation | ✅ v0.1.0 | Project structure, config, health endpoints, Docker, CI |
-| 1 | M2: API Contract Design | ⬜ | Chat/session request-response models, error handling |
+| 1 | M2: API Contract Design | ✅ v0.2.0 | Chat/session request-response models, error handling |
 | 1 | M3: Core Chat API | ⬜ | Chat endpoint, basic request/response flow |
 | 2 | M4: LLM Integration | ⬜ | LLM service abstraction, provider routing |
 | 2 | M5: Session Management | ⬜ | Multi-turn conversations, context persistence |

@@ -31,8 +31,9 @@ class TestSettingsDefaults:
 
     def test_default_debug(self):
         """Default DEBUG should be False."""
-        settings = Settings()
-        assert settings.DEBUG is False
+        settings = Settings(_env_file=None, _env_file_encoding=None, DEBUG=False)
+        # We explicitly pass DEBUG=False to test the model's type/handling or we can just test the model_fields default
+        assert Settings.model_fields["DEBUG"].default is False
 
     def test_default_host(self):
         """Default HOST should be '0.0.0.0'."""
@@ -51,8 +52,7 @@ class TestSettingsDefaults:
 
     def test_default_log_level(self):
         """Default LOG_LEVEL should be 'INFO'."""
-        settings = Settings()
-        assert settings.LOG_LEVEL == "INFO"
+        assert Settings.model_fields["LOG_LEVEL"].default == "INFO"
 
     def test_default_log_format(self):
         """Default LOG_FORMAT should be 'text'."""

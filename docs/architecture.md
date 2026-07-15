@@ -2,7 +2,7 @@
 
 This document describes the system architecture, component relationships, and request flow for the OpenMind AI Platform backend.
 
-> **Scope:** This document reflects the v0.1.0 (Backend Foundation) release. Components marked with *(future)* are planned for upcoming milestones.
+> **Scope:** This document reflects the v0.2.0 (API Contract Design) release. Components marked with *(future)* are planned for upcoming milestones.
 
 ---
 
@@ -22,13 +22,13 @@ graph TB
         D[CORS Middleware]
         E[Router]
         F[Health Routes]
-        G[Chat Routes<br/><i>future</i>]
-        H[Session Routes<br/><i>future</i>]
+        G[Chat Routes]
+        H[Session & Model Routes]
     end
 
     subgraph Services["Service Layer"]
-        I[LLM Service<br/><i>future</i>]
-        J[Conversation Manager<br/><i>future</i>]
+        I[Chat Service]
+        J[Session & Model Services]
     end
 
     subgraph Storage["Storage Layer"]
@@ -166,16 +166,27 @@ openmind-ai-platform/
 │   ├── main.py                   # Application factory (create_application)
 │   ├── api/                      # HTTP layer
 │   │   ├── router.py             # Central router — aggregates all domain routers
+│   │   ├── errors.py             # Global exception handlers
 │   │   └── routes/               # Individual route modules
-│   │       └── health.py         # GET / and GET /health handlers
+│   │       ├── health.py         # GET / and GET /health handlers
+│   │       ├── chat.py           # POST /chat and /chat/stream
+│   │       ├── sessions.py       # Session CRUD handlers
+│   │       └── models.py         # Model discovery handlers
 │   ├── core/                     # Cross-cutting infrastructure
 │   │   ├── config.py             # Settings class + get_settings() singleton
 │   │   ├── lifespan.py           # Async startup/shutdown lifecycle
 │   │   └── logging.py            # structlog configuration
 │   ├── schemas/                  # Pydantic DTOs (request/response models)
-│   │   └── health.py             # HealthResponse, RootResponse
+│   │   ├── health.py             # HealthResponse, RootResponse
+│   │   ├── errors.py             # APIError, ErrorDetail
+│   │   ├── chat.py               # ChatRequest, ChatResponse, etc.
+│   │   ├── sessions.py           # Session schemas
+│   │   └── models.py             # Model metadata schemas
 │   ├── models/                   # Domain/ORM models (future)
-│   ├── services/                 # Business logic (future)
+│   ├── services/                 # Business logic
+│   │   ├── chat_service.py       # Mock chat generation & streaming
+│   │   ├── session_service.py    # Mock session CRUD logic
+│   │   └── model_service.py      # Mock model discovery
 │   ├── storage/                  # Persistence adapters (future)
 │   └── utils/                    # Shared helpers
 │
