@@ -1,9 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.sessions import SessionCreateRequest, SessionListResponse, SessionResponse
-from app.services.session_service import SessionService, get_session_service
+from app.core.database import get_db
+from app.schemas.sessions import (
+    MessageCreateRequest,
+    SessionCreateRequest,
+    SessionListResponse,
+    SessionResponse,
+    SessionUpdateRequest,
+)
+from app.services.session_service import SessionService
 
 router = APIRouter()
+
+
+async def get_session_service(session: AsyncSession = Depends(get_db)) -> SessionService:
+    return SessionService(session)
 
 
 @router.post(
@@ -34,6 +46,36 @@ async def list_sessions(
     return SessionListResponse(sessions=sessions, total=len(sessions))
 
 
+@router.get(
+    "/{session_id}",
+    summary="Get session details",
+    description="Retrieves a session with its messages.",
+)
+async def get_session(
+    session_id: str, service: SessionService = Depends(get_session_service)
+) -> dict:
+    """GET /sessions/{session_id} endpoint."""
+    result = await service.get_session(session_id)
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found.")
+    return result.model_dump()
+
+
+@router.put(
+    "/{session_id}",
+    summary="Update session parameters",
+    description="Updates session configuration (temperature, model, etc.).",
+)
+async def update_session(
+    session_id: str, params: SessionUpdateRequest, service: SessionService = Depends(get_session_service)
+) -> dict:
+    """PUT /sessions/{session_id} endpoint."""
+    result = await service.update_session_params(session_id, params.model_dump(exclude_unset=True))
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found.")
+    return result.model_dump()
+
+
 @router.delete(
     "/{session_id}",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -46,7 +88,35 @@ async def delete_session(
     """DELETE /sessions/{session_id} endpoint."""
     success = await service.delete_session(session_id)
     if not success:
-        # We use a 404 exception here which our global handler will catch
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found."
         )
+
+
+@router.get(
+    "/{session_id}/messages",
+    summary="List session messages",
+    description="Retrieves all messages for a session.",
+)
+async def list_messages(
+    session_id: str, service: SessionService = Depends(get_session_service)
+) -> list[dict]:
+    """GET /sessions/{session_id}/messages endpoint."""
+    return await service.get_messages(session_id)
+
+
+@router.post(
+    "/{session_id}/messages",
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a message to a session",
+    description="Adds a new message to the conversation.",
+)
+async def add_message(
+    session_id: str, data: MessageCreateRequest, service: SessionService = Depends(get_session_service)
+) -> dict:
+    """POST /sessions/{session_id}/messages endpoint."""
+    return await service.add_message(
+        session_id=session_id,
+        role=data.role,
+        content=data.content,
+    )

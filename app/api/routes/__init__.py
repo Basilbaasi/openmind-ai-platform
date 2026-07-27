@@ -1,7 +1,6 @@
 """
-API routes sub-package.
+API routes package.
 
-Each module in this package defines an APIRouter for a specific
-domain area. New feature routes (chat, sessions, models) are added
-as separate modules here, then registered in the parent router.
+Each module defines an APIRouter for a specific domain.
+All routers are aggregated in router.py.
 """

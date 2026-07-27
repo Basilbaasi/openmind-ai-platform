@@ -2,10 +2,45 @@
 # OpenMind AI Platform – Docker Compose
 # ─────────────────────────────────────────────────────────────────
 # Provides a single-command local development environment.
-# Future phases will add services: postgres, redis, pgadmin, etc.
+# Usage: docker compose up -d
 # ─────────────────────────────────────────────────────────────────
 
 services:
+  # ── PostgreSQL ──────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: openmind-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: openmind
+      POSTGRES_PASSWORD: openmind
+      POSTGRES_DB: openmind
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openmind -d openmind"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  # ── pgAdmin (optional, for DB inspection) ──────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: openmind-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@openmind.ai
+      PGADMIN_DEFAULT_PASSWORD: admin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── FastAPI Backend ────────────────────────────────────────────
   api:
     build:
       context: .
@@ -17,14 +52,19 @@ services:
       - .env
     environment:
       - ENVIRONMENT=development
+      - DATABASE_URL=postgresql+asyncpg://openmind:openmind@postgres:5432/openmind
     volumes:
       # Mount source for live-reload during development
       - ./app:/app/app
+      - ./uploads:/app/uploads
     command: >
       uvicorn app.main:app
       --host 0.0.0.0
       --port 8000
       --reload
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8000/health"]
@@ -46,11 +86,6 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  # ── Future Services ────────────────────────────────────────────
-  # postgres:
-  #   image: postgres:16-alpine
-  #   ...
-  #
-  # redis:
-  #   image: redis:7-alpine
-  #   ...
+volumes:
+  pgdata:
+    driver: local

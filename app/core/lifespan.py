@@ -7,6 +7,7 @@ for initialising and tearing down shared resources like database pools,
 HTTP clients, ML model caches, etc.
 """
 
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
@@ -38,18 +39,27 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         environment=settings.ENVIRONMENT,
     )
 
-    # Future phases will initialise resources here:
-    # - Database connection pool
-    # - Redis / cache client
-    # - LLM service connections
-    # - Background task scheduler
+    # Ensure upload directory exists
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+
+    # Database – create tables if they don't exist (dev convenience)
+    from app.core.database import engine
+    from app.models.base import Base
+
+    # Import all models so Base.metadata knows about them
+    import app.models  # noqa: F401
+
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("database_initialized", url=settings.DATABASE_URL.split("@")[-1])
 
     yield  # ← Application is running and serving requests
 
     # ── Shutdown ─────────────────────────────────────────────────────
     logger.info("application_shutdown")
 
-    # Future phases will clean up resources here:
-    # - Close DB pool
-    # - Disconnect cache client
-    # - Flush pending telemetry
+    # Close the database connection pool
+    from app.core.database import engine as db_engine
+
+    await db_engine.dispose()
+    logger.info("database_connections_closed")

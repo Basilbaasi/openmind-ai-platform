@@ -37,6 +37,19 @@ class Settings(BaseSettings):
     # ── API ──────────────────────────────────────────────────────────
     API_V1_PREFIX: str = "/api/v1"
 
+    # ── Database ─────────────────────────────────────────────────────
+    DATABASE_URL: str = "sqlite+aiosqlite:///./openmind.db"
+
+    # ── AI / LLM ─────────────────────────────────────────────────────
+    GEMINI_API_KEY: str = ""
+
+    # ── File Storage ─────────────────────────────────────────────────
+    UPLOAD_DIR: str = "./uploads"
+    MAX_UPLOAD_SIZE_MB: int = 50
+
+    # ── Security ─────────────────────────────────────────────────────
+    API_KEY_HEADER: str = "Authorization"
+
     # ── Logging ──────────────────────────────────────────────────────
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"] = "INFO"
     LOG_FORMAT: Literal["json", "text"] = "text"

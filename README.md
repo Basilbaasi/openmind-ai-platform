@@ -1,269 +1,217 @@
-# 🧠 OpenMind AI Platform
+# OpenMind AI Platform
 
-<!-- TODO: Replace with actual GitHub repo URL for CI badge -->
-[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688.svg)](https://fastapi.tiangolo.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-brightgreen.svg)]()
+**OpenMind AI Platform** is a full-stack, enterprise-grade application for model routing, LLM playground workspace management, agent workflow orchestration, graph memory storage, and document ingestion (RAG).
 
-A production-grade AI platform built with **FastAPI**, designed for scalability, modularity, and clean software architecture. OpenMind AI provides the backend foundation for intelligent services — from chat interfaces to multi-model orchestration.
-
-> **Current Release: v0.2.0 — API Contract Design**
-> The platform now features stable public API contracts for the Chat, Models, and Sessions domains. These APIs return deterministic mock data and provide a robust foundation for the frontend team to begin concurrent development. The architecture introduces a decoupled Service Layer, standardizing request/response formats independent of any AI provider.
+Built with **FastAPI (Python 3.11+)**, **SQLAlchemy 2.0 (Async)**, **SQLite / PostgreSQL**, and a **React 19 + TypeScript + Vite + TailwindCSS** single-page web dashboard.
 
 ---
 
-## ✨ Features
+## 🌟 Key Feature Modules
 
-- **FastAPI Application Factory** — Clean, testable app creation via `create_application()`
-- **Type-Safe Configuration** — Environment-driven settings validated at startup with Pydantic Settings
-- **Structured Logging** — JSON and human-readable formats via `structlog`, production-ready for log aggregation
-- **Health Monitoring** — `GET /health` endpoint for load balancers and container orchestrators
-- **Interactive API Docs** — Auto-generated Swagger UI (`/docs`) and ReDoc (`/redoc`)
-- **Multi-Stage Docker Build** — Lean production images with non-root user security
-- **CI Pipeline** — Automated linting (Ruff), type checking (mypy), and testing (pytest)
-- **CORS Middleware** — Configurable cross-origin request handling
-- **Lifespan Management** — Async startup/shutdown hooks for resource lifecycle
+| Module | Description |
+| ------ | ----------- |
+| **Dashboard** | Overview of system metrics (CPU, Memory, VRAM, uptime), active models, ingested sources, and workflows |
+| **Playground** | Multi-session AI chat interface with configurable temperature, top_p, max tokens, system prompts, and JSON mode |
+| **API Explorer** | Postman-like API request builder and logger for testing platform endpoints |
+| **Models** | Model registry for local & cloud AI models (Llama 3, DeepSeek R1, Gemini 2.0/3.5, GPT-4o, CLIP, BGE) |
+| **Sessions** | Workspace session manager with persistent message history and settings |
+| **Memory** | Graph-based memory network spanning Conversation, Semantic, and Long-Term tiers |
+| **Knowledge** | Document ingestion pipeline supporting PDF, Markdown, and TXT upload with character chunking |
+| **Orchestrator** | Multi-step agent workflow execution engine (LLM, Condition, API Call, Memory Fetch, Human Approval) |
+| **Benchmarks** | Model comparison table (TTFT, TPS, latency, accuracy, VRAM usage, cost per 1k) |
+| **Logs** | System event log viewer with severity filtering and hot replay triggers |
+| **Settings** | Platform configuration and theme switcher (Sophisticated Dark, Slate Dark, Cyberpunk Light, etc.) |
 
 ---
 
-## 🚀 Quick Start
+## 📂 Project Directory Structure
 
-### Prerequisites
+```text
+openmind-ai-platform/
+├── app/                        # FastAPI Backend Application
+│   ├── api/                    # API Route Handlers
+│   │   ├── routes/             # Feature domain routes
+│   │   │   ├── api_keys.py     # API key management
+│   │   │   ├── benchmarks.py   # Benchmark data endpoints
+│   │   │   ├── chat.py         # Chat completion & SSE streaming
+│   │   │   ├── gateway.py      # OpenAI-compatible API gateway
+│   │   │   ├── health.py       # Health check & root endpoints
+│   │   │   ├── knowledge.py    # Document upload & knowledge sources
+│   │   │   ├── logs.py         # System log viewer endpoints
+│   │   │   ├── memory.py       # Memory graph nodes & logs
+│   │   │   ├── models.py       # AI model registry CRUD
+│   │   │   ├── monitoring.py   # Real system status & metrics
+│   │   │   ├── sessions.py     # Playground chat sessions
+│   │   │   ├── settings.py     # System configuration settings
+│   │   │   └── workflows.py    # Workflow definitions & step execution
+│   │   └── router.py           # Central APIRouter mounting all routes
+│   ├── core/                   # Core Infrastructure
+│   │   ├── config.py           # Pydantic environment settings
+│   │   ├── database.py         # Async SQLAlchemy engine & session factory
+│   │   ├── lifespan.py         # App startup/shutdown lifespan manager
+│   │   ├── logging.py          # Structlog configuration
+│   │   └── seed.py             # Idempotent database seed script
+│   ├── models/                 # SQLAlchemy ORM Models
+│   │   ├── api_key.py          # ApiKeyRecord
+│   │   ├── base.py             # Base model, TimestampMixin, UUIDMixin
+│   │   ├── benchmark.py        # BenchmarkRecord
+│   │   ├── knowledge.py        # KnowledgeSourceRecord
+│   │   ├── log_entry.py        # LogEntryRecord
+│   │   ├── memory.py           # MemoryNodeRecord, MemoryConnectionRecord
+│   │   ├── memory_log.py       # MemoryLogRecord
+│   │   ├── model.py            # ModelRecord
+│   │   ├── request_log.py      # RequestLogRecord
+│   │   ├── session.py          # SessionRecord, MessageRecord
+│   │   ├── setting.py          # SystemSettingRecord
+│   │   └── workflow.py         # WorkflowRecord, WorkflowStepRecord
+│   ├── schemas/                # Pydantic DTOs & Validation Schemas
+│   │   ├── chat.py             # ChatRequest, ChatResponse, ChatStreamResponse
+│   │   ├── errors.py           # APIError standard response
+│   │   ├── health.py           # HealthResponse
+│   │   ├── models.py           # ModelCreateRequest, ModelUpdateRequest, ModelMetadata
+│   │   └── sessions.py         # SessionCreateRequest, SessionUpdateRequest, MessageCreateRequest
+│   ├── services/               # Domain Business Logic
+│   │   ├── api_key_service.py  # API key generation & fast prefix lookup
+│   │   ├── chat_service.py     # Gemini AI integration, SSE streaming, token counting
+│   │   ├── domain_services.py  # Knowledge, Workflow, Memory, Log, Settings, Benchmark services
+│   │   ├── model_service.py    # Model registry service
+│   │   ├── monitoring_service.py # System status & resource monitoring
+│   │   └── session_service.py  # Session & message history service
+│   └── storage/                # Repository Pattern Data Access Layer
+│       ├── api_key_repository.py
+│       ├── base_repository.py  # Generic Async CRUD BaseRepository
+│       ├── knowledge_repository.py
+│       ├── memory_repository.py
+│       ├── misc_repositories.py
+│       ├── model_repository.py
+│       ├── request_log_repository.py
+│       ├── session_repository.py
+│       └── workflow_repository.py
+├── client/                     # React 19 + TypeScript Frontend
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── client.ts       # Type-safe API client targeting Vite proxy
+│   │   ├── components/         # 11 Feature View Components
+│   │   ├── App.tsx             # Main App layout, router & backend data sync
+│   │   ├── data.ts             # Initial fallback data
+│   │   └── types.ts            # TypeScript interfaces
+│   ├── package.json
+│   └── vite.config.ts          # Vite config with backend proxy on port 8000
+├── tests/                      # Pytest Suite (59 tests)
+│   ├── api/                    # API integration tests (chat, models, sessions)
+│   ├── services/               # Unit tests for domain services
+│   └── conftest.py             # Shared AsyncClient fixtures
+├── docker-compose.yml          # Production Docker Compose config
+├── Dockerfile                  # Multi-stage production build
+├── requirements.txt            # Python dependencies
+└── pyproject.toml              # Pytest, Ruff, and Mypy configuration
+```
 
+---
+
+## 🚀 Quick Start Guide
+
+### 1. Prerequisites
 - **Python 3.11+**
-- **pip** (or any Python package manager)
-- **Docker** & **Docker Compose** (optional, for containerized development)
+- **Node.js 18+**
+- *(Optional)* **Docker & Docker Compose** (for PostgreSQL)
 
-### Local Development
+---
 
-```bash
-# Clone the repository
-git clone <TODO: Insert actual repo URL>
-cd openmind-ai-platform
+### 2. Backend Setup
 
-# Create and activate virtual environment
-python -m venv .venv
+1. **Create and Activate Virtual Environment:**
+   ```bash
+   python -m venv .venv
+   
+   # Windows (PowerShell)
+   .\.venv\Scripts\Activate.ps1
+   
+   # Linux / macOS
+   source .venv/bin/activate
+   ```
 
-# Windows
-.venv\Scripts\activate
+2. **Install Dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-# macOS / Linux
-source .venv/bin/activate
+3. **Configure Environment Variables:**
+   Copy `.env.example` to `.env`:
+   ```bash
+   cp .env.example .env
+   ```
+   Add your Gemini API Key in `.env`:
+   ```ini
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+   *(By default, `DATABASE_URL` uses local SQLite `sqlite+aiosqlite:///./openmind.db` for zero-setup execution).*
 
-# Install dependencies
-pip install -r requirements.txt
+4. **Initialize and Seed Database:**
+   ```bash
+   python -m app.core.seed
+   ```
 
-# Configure environment
-cp .env.example .env
+5. **Start the FastAPI Server:**
+   ```bash
+   python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+   ```
+   - **Backend API**: `http://localhost:8000`
+   - **Interactive API Docs (Swagger)**: `http://localhost:8000/docs`
 
-# Start the development server
-uvicorn app.main:app --reload
-```
+---
 
-The API will be available at **http://localhost:8000**.
+### 3. Frontend Setup
 
-### 🐳 Docker
+In a new terminal window:
 
-```bash
-# Build and run (foreground)
-docker compose up --build
+1. **Navigate to the `client/` Directory:**
+   ```bash
+   cd client
+   ```
 
-# Run in background
-docker compose up -d --build
+2. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
-# View logs
-docker compose logs -f api
+3. **Start the Vite Dev Server:**
+   ```bash
+   npm run dev
+   ```
+   - **Frontend App**: `http://localhost:3000`
 
-# Stop
-docker compose down
-```
+---
+
+## 🔌 API Endpoints Summary
+
+### OpenAI-Compatible Gateway (`/api/v1`)
+- `POST /api/v1/chat/completions` — OpenAI-compatible chat completion (with Bearer token auth)
+- `POST /api/v1/embeddings` — OpenAI-compatible text embeddings
+- `GET /api/v1/models` — OpenAI-compatible model listing
+
+### Core Domain APIs
+- `POST /chat` & `POST /chat/stream` — Main chat completions & SSE streaming
+- `GET /models`, `POST /models`, `PUT /models/{id}`, `DELETE /models/{id}` — Model registry CRUD
+- `GET /sessions`, `POST /sessions`, `GET /sessions/{id}`, `PUT /sessions/{id}`, `DELETE /sessions/{id}` — Sessions
+- `GET /knowledge`, `POST /knowledge/upload`, `DELETE /knowledge/{id}` — Document ingestion
+- `GET /workflows`, `POST /workflows`, `POST /workflows/{id}/execute` — Workflow orchestration
+- `GET /memory/nodes`, `POST /memory/nodes`, `GET /memory/logs` — Graph memory
+- `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/{id}` — API Key management
+- `GET /api/status` — Real-time CPU, GPU VRAM, Memory, and DB monitoring
 
 ---
 
 ## 🧪 Running Tests
 
+Run the backend pytest suite (59 unit and integration tests):
+
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with short traceback
-pytest tests/ -v --tb=short
-
-# Run a specific test file
-pytest tests/test_health.py -v
-
-# Lint check
-ruff check app/ tests/
-
-# Format check
-ruff format --check app/ tests/
-
-# Type check
-mypy app/ --ignore-missing-imports
+python -m pytest
 ```
 
 ---
 
-## 📡 API Endpoints
+## 📜 License
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `GET` | `/` | Root discovery endpoint — returns welcome message, version, and docs link |
-| `GET` | `/health` | Health check — returns service status, version, environment, timestamp |
-| `POST` | `/chat` | Generates a complete mock chat response (blocking) |
-| `POST` | `/chat/stream` | Generates a streaming mock chat response (SSE) |
-| `GET` | `/models` | Retrieves the list of available mock AI models |
-| `POST` | `/sessions` | Creates a new mock conversation session |
-| `GET` | `/sessions` | Retrieves the list of mock active sessions |
-| `DELETE`| `/sessions/{id}`| Deletes a mock session |
-| `GET` | `/docs` | Interactive Swagger UI documentation |
-| `GET` | `/redoc` | Alternative ReDoc documentation |
-| `GET` | `/openapi.json` | Raw OpenAPI 3.1 schema |
-
-> See [docs/api.md](docs/api.md) for complete request/response schemas and examples.
-
----
-
-## 📁 Project Structure
-
-```
-openmind-ai-platform/
-│
-├── app/                        # Application source code
-│   ├── api/                    # HTTP layer
-│   │   ├── routes/             # Route handlers by domain
-│   │   │   ├── health.py       # Health & root endpoints
-│   │   │   ├── chat.py         # Chat endpoints
-│   │   │   ├── models.py       # Model discovery endpoints
-│   │   │   └── sessions.py     # Session endpoints
-│   │   ├── errors.py           # Global exception handlers
-│   │   └── router.py           # Central router aggregator
-│   ├── core/                   # Cross-cutting concerns
-│   │   ├── config.py           # Pydantic Settings configuration
-│   │   ├── lifespan.py         # Startup / shutdown lifecycle
-│   │   └── logging.py          # Structured logging setup
-│   ├── models/                 # Domain / ORM models (future)
-│   ├── schemas/                # Pydantic request/response DTOs
-│   │   ├── health.py           # Health & root response schemas
-│   │   ├── chat.py             # Chat request/response schemas
-│   │   ├── models.py           # Model metadata schemas
-│   │   ├── sessions.py         # Session management schemas
-│   │   └── errors.py           # API Error schema
-│   ├── services/               # Business logic services
-│   │   ├── chat_service.py     # Chat mocking & streaming service
-│   │   ├── model_service.py    # Model discovery mock service
-│   │   └── session_service.py  # Session mock service
-│   ├── storage/                # Data persistence layer (future)
-│   ├── utils/                  # Shared utilities
-│   └── main.py                 # Application factory & entry point
-│
-├── tests/                      # Test suite
-│   ├── api/                    # API route tests
-│   │   ├── test_chat.py
-│   │   ├── test_models.py
-│   │   └── test_sessions.py
-│   ├── services/               # Service layer tests
-│   │   └── test_chat_service.py
-│   ├── conftest.py             # Shared fixtures (app, async_client)
-│   ├── test_health.py          # Health & root endpoint tests
-│   ├── test_config.py          # Configuration tests
-│   └── test_application.py     # Application factory tests
-│
-├── docs/                       # Documentation
-│   ├── architecture.md         # Architecture diagrams & design
-│   ├── api.md                  # API reference
-│   ├── phase1-retrospective.md # Milestone 1 retrospective
-│   ├── phase2-retrospective.md # Milestone 2 retrospective
-│   └── release-checklist-v0.2.0.md # Release readiness checklist
-│
-├── benchmarks/                 # Performance benchmarks (future)
-├── docker/                     # Additional Docker configs (future)
-├── scripts/                    # Utility scripts
-│   ├── start.sh                # Dev server launcher
-│   └── run_tests.sh            # Test runner
-├── .github/workflows/          # CI/CD pipelines
-│   └── ci.yml                  # Lint + type check + test
-│
-├── Dockerfile                  # Multi-stage production image
-├── docker-compose.yml          # Local development stack
-├── requirements.txt            # Python dependencies
-├── pyproject.toml              # Tool configuration (ruff, mypy, pytest)
-├── .env.example                # Environment variable template
-├── .dockerignore               # Docker build context exclusions
-├── CHANGELOG.md                # Release history
-├── .gitignore                  # Git ignore rules
-└── README.md                   # This file
-```
-
----
-
-## ⚙️ Configuration
-
-All configuration is managed via environment variables, loaded through [Pydantic Settings](https://docs.pydantic.dev/latest/concepts/pydantic_settings/). Copy `.env.example` to `.env` for local development.
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `APP_NAME` | `OpenMind AI Platform` | Application display name |
-| `APP_VERSION` | `0.2.0` | Semantic version |
-| `ENVIRONMENT` | `development` | `development` \| `staging` \| `production` |
-| `DEBUG` | `false` | Enable debug mode |
-| `HOST` | `0.0.0.0` | Server bind address |
-| `PORT` | `8000` | Server port |
-| `WORKERS` | `1` | Uvicorn worker count |
-| `API_V1_PREFIX` | `/api/v1` | API version prefix |
-| `LOG_LEVEL` | `INFO` | `DEBUG` \| `INFO` \| `WARNING` \| `ERROR` \| `CRITICAL` |
-| `LOG_FORMAT` | `text` | `text` (dev) \| `json` (production) |
-| `CORS_ORIGINS` | `["*"]` | Allowed CORS origins |
-
----
-
-## 🏗️ Architecture
-
-The platform follows a **layered architecture** with clear separation of concerns:
-
-```
-Clients (Web, Mobile, CLI)
-        │
-        ▼
-   API Layer ─── Routes, Middleware, CORS
-        │
-        ▼
-  Service Layer ─── Business Logic (future)
-        │
-        ▼
- Storage Layer ─── Persistence, Cache (future)
-```
-
-Each layer communicates only with the layer directly below it. See [docs/architecture.md](docs/architecture.md) for full diagrams and component relationships.
-
----
-
-## 🛣️ Roadmap
-
-| Phase | Milestone | Status | Description |
-|-------|-----------|--------|-------------|
-| 1 | M1: Backend Foundation | ✅ v0.1.0 | Project structure, config, health endpoints, Docker, CI |
-| 1 | M2: API Contract Design | ✅ v0.2.0 | Chat/session request-response models, error handling |
-| 1 | M3: Core Chat API | ⬜ | Chat endpoint, basic request/response flow |
-| 2 | M4: LLM Integration | ⬜ | LLM service abstraction, provider routing |
-| 2 | M5: Session Management | ⬜ | Multi-turn conversations, context persistence |
-| 3 | M6: Production Hardening | ⬜ | Auth, rate limiting, monitoring, caching |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-Please ensure all tests pass and linting is clean before submitting.
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+MIT License. Developed for the **OpenMind AI Platform**.

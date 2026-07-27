@@ -1,10 +1,16 @@
 from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.database import get_db
 from app.schemas.chat import ChatRequest, ChatResponse
-from app.services.chat_service import ChatService, get_chat_service
+from app.services.chat_service import ChatService
 
 router = APIRouter()
+
+
+async def get_chat_service(session: AsyncSession = Depends(get_db)) -> ChatService:
+    return ChatService(session)
 
 
 @router.post(

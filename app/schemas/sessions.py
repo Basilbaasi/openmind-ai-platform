@@ -10,9 +10,31 @@ class SessionCreateRequest(BaseModel):
     """
 
     title: str | None = Field(None, description="Optional title for the session")
+    model_id: str | None = Field(None, description="Model ID")
+    temperature: float | None = Field(0.7, description="Temperature")
+    max_tokens: int | None = Field(1024, description="Max tokens")
+    top_p: float | None = Field(0.9, description="Top P")
+    presence_penalty: float | None = Field(0.0, description="Presence penalty")
+    json_mode: bool | None = Field(False, description="JSON mode")
     metadata: dict[str, Any] | None = Field(
         default_factory=dict, description="Optional arbitrary metadata for the session"
     )
+
+
+class SessionUpdateRequest(BaseModel):
+    title: str | None = None
+    model_id: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    top_p: float | None = None
+    presence_penalty: float | None = None
+    json_mode: bool | None = None
+    metadata: dict[str, Any] | None = None
+
+
+class MessageCreateRequest(BaseModel):
+    role: str = Field("user", description="Message role (user, assistant, system)")
+    content: str = Field(..., description="Message text content")
 
 
 class SessionResponse(BaseModel):
