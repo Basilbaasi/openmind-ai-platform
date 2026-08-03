@@ -12,68 +12,159 @@ After reading this guide, you will be able to explain every file in this reposit
 
 ## 📖 How to Use This Guide
 
-1. **Start with `01_Project_Overview.md`** — understand what the project is and what it does
-2. **Read `02_Architecture.md`** — understand the big-picture design before diving into code
-3. **Follow `23_Learning_Roadmap.md`** — a structured week-by-week learning plan
-4. **Use `24_Project_Map.md`** — a quick reference when you need to find something fast
+> **⚠️ IMPORTANT**: The file numbers (01, 02, 03...) are just IDs — they are **NOT the recommended reading order**. Follow the phases below instead. Each phase builds on the previous one.
 
-Each file in this guide is **self-contained**. You can read them in order or jump to any specific topic.
+The guide is organized into **8 learning phases**. Each phase teaches you a layer of the project, and you need the previous phase to understand the next one.
+
+**Do NOT skip phases.** If something in Phase 4 confuses you, go back to Phase 3.
 
 ---
 
-## 📂 Guide Contents
+## 🎓 BEGINNER READING ORDER (Follow This!)
 
-### Foundation (Read First)
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 01 | [Project Overview](01_Project_Overview.md) | What this project is, who it's for, what it does |
-| 02 | [Architecture](02_Architecture.md) | Layered architecture, design patterns, data flow |
-| 03 | [Backend Flow](03_Backend_Flow.md) | How a request travels from HTTP to database and back |
-| 04 | [Frontend Flow](04_Frontend_Flow.md) | How the React UI works, component hierarchy, state management |
-| 05 | [Runtime Lifecycle](05_Runtime_Lifecycle.md) | What happens when the app starts, serves, and shuts down |
+---
 
-### Deep Dives (Read in Order)
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 06 | [API Flow](06_API_Flow.md) | Every endpoint, every request/response, every validation |
-| 07 | [Database](07_Database.md) | Every table, every column, every relationship, every query |
-| 08 | [Folder Structure](08_Folder_Structure.md) | Every folder's purpose and what happens if you delete it |
+### 🟢 Phase 1: "What Is This Project?" (Day 1)
 
-### Module-by-Module Code Walkthroughs
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 09 | [Core Module](09_Core_Module.md) | `config.py`, `database.py`, `lifespan.py`, `logging.py`, `seed.py` |
-| 10 | [API Module](10_API_Module.md) | `router.py`, `errors.py`, and every route file |
-| 11 | [Services Module](11_Services_Module.md) | `chat_service.py`, `session_service.py`, `model_service.py`, etc. |
-| 12 | [Schemas Module](12_Schemas_Module.md) | `chat.py`, `health.py`, `models.py`, `sessions.py`, `errors.py` |
-| 13 | [Models Module](13_Models_Module.md) | Every SQLAlchemy ORM model, every mixin, every relationship |
-| 14 | [Repositories Module](14_Repositories_Module.md) | `base_repository.py` and every domain repository |
-| 15 | [Frontend Components](15_Frontend_Components.md) | `App.tsx`, `client.ts`, `types.ts`, `data.ts`, every component |
+> **Goal**: Understand what the project does, what technologies it uses, and learn the vocabulary.
 
-### Infrastructure & Operations
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 16 | [Tests](16_Tests.md) | Every test file, what it verifies, why it exists |
-| 17 | [Docker](17_Docker.md) | `Dockerfile`, `docker-compose.yml`, multi-stage builds |
-| 18 | [CI/CD](18_CI_CD.md) | GitHub Actions workflow, linting, testing pipeline |
+Read in this exact order:
 
-### Execution Traces & Debugging
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 19 | [Execution Traces](19_Execution_Traces.md) | Step-by-step runtime traces for every major feature |
+| Step | File | Why You Read It First |
+|------|------|-----------------------|
+| 1st | [22 — Glossary](22_Glossary.md) | **Read this FIRST.** It explains every technical term (like ASGI, ORM, SSE, middleware, etc.) in plain language. Keep it open as a reference while reading everything else. |
+| 2nd | [01 — Project Overview](01_Project_Overview.md) | Now you understand the terms, so you can absorb what this project actually does, what tech stack it uses, and what's implemented vs not. |
 
-### Issues & Future Work
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 20 | [Known Issues](20_Known_Issues.md) | Bugs, dead code, inconsistencies, missing features |
-| 21 | [Improvements for Future](21_Improvements_For_Future.md) | Architecture improvements, features to add |
+**After Phase 1 you can answer**: *"What does OpenMind AI Platform do? What technologies does it use?"*
 
-### Reference
-| # | File | What You'll Learn |
-|---|------|------------------|
-| 22 | [Glossary](22_Glossary.md) | Every technical term used in this project |
-| 23 | [Learning Roadmap](23_Learning_Roadmap.md) | Week-by-week structured learning plan |
-| 24 | [Project Map](24_Project_Map.md) | Quick-reference map of every file and its purpose |
+---
+
+### 🟢 Phase 2: "What Files Exist and Where?" (Day 1-2)
+
+> **Goal**: See the physical layout of the project. Know where to find things.
+
+| Step | File | Why You Read It Now |
+|------|------|-----------------------|
+| 3rd | [08 — Folder Structure](08_Folder_Structure.md) | See every folder and file, and what breaks if you delete each one. This gives you a mental map before diving into code. |
+| 4th | [24 — Project Map](24_Project_Map.md) | Quick-reference table of every single file and what it does. Bookmark this — you'll come back to it constantly. |
+
+**After Phase 2 you can answer**: *"Where is the database code? Where are the routes? Where is the frontend?"*
+
+---
+
+### 🟢 Phase 3: "How Is It Designed?" (Day 2-3)
+
+> **Goal**: Understand the big-picture architecture — layers, patterns, data flow.
+
+| Step | File | Why You Read It Now |
+|------|------|-----------------------|
+| 5th | [02 — Architecture](02_Architecture.md) | Now that you know what files exist, you can understand HOW they're organized — the layered design, the 8 design patterns, the import graph. |
+
+**After Phase 3 you can answer**: *"Why are there separate folders for routes, services, and repositories? What pattern does this follow?"*
+
+---
+
+### 🟡 Phase 4: "How Does It Start and Configure?" (Day 3-4)
+
+> **Goal**: Understand what happens when you type `uvicorn app.main:app --reload`.
+
+| Step | File | Why You Read It Now |
+|------|------|-----------------------|
+| 6th | [05 — Runtime Lifecycle](05_Runtime_Lifecycle.md) | The timeline of startup → serving → shutdown. You need to know this before understanding how requests are handled. |
+| 7th | [09 — Core Module](09_Core_Module.md) | Line-by-line walkthrough of `config.py`, `database.py`, `lifespan.py`, `logging.py`, `seed.py`. These are the first files that run when the app starts. |
+
+**After Phase 4 you can answer**: *"What does `get_settings()` do? What does `get_db()` do? How are tables created?"*
+
+---
+
+### 🟡 Phase 5: "Where Does Data Live?" (Day 4-6)
+
+> **Goal**: Understand the database — tables, columns, relationships, and how Python talks to the database.
+
+Read these **in order** — each one builds on the previous:
+
+| Step | File | Why This Order |
+|------|------|-----------------------|
+| 8th | [07 — Database](07_Database.md) | All 11 tables with every column. You need to see the tables before understanding the Python classes that map to them. |
+| 9th | [13 — Models Module](13_Models_Module.md) | The SQLAlchemy ORM classes. Now you can see how each Python class maps to a database table from the previous file. |
+| 10th | [12 — Schemas Module](12_Schemas_Module.md) | The Pydantic request/response models. Now you understand the DIFFERENCE between a database model (SQLAlchemy) and an API model (Pydantic). |
+| 11th | [14 — Repositories Module](14_Repositories_Module.md) | How data is actually read/written. Repositories use the models (step 9) to talk to the tables (step 8). |
+
+**After Phase 5 you can answer**: *"What's the difference between `ModelRecord` and `ModelMetadata`? What does `BaseRepository.create()` actually do?"*
+
+---
+
+### 🟡 Phase 6: "How Does Business Logic Work?" (Day 6-8)
+
+> **Goal**: Understand the services (brain of the app) and the routes (HTTP interface).
+
+| Step | File | Why This Order |
+|------|------|-----------------------|
+| 12th | [11 — Services Module](11_Services_Module.md) | Services use repositories (Phase 5) to implement business logic. ChatService, SessionService, etc. This is where the "real work" happens. |
+| 13th | [10 — API Module](10_API_Module.md) | Routes use services (step 12) to handle HTTP requests. Now you can see how a URL maps to a service call. |
+| 14th | [03 — Backend Flow](03_Backend_Flow.md) | **NOW** you understand all the pieces (routes → services → repos → models → database), so you can trace a request end-to-end and it will make sense. |
+| 15th | [06 — API Flow](06_API_Flow.md) | Complete reference of every endpoint with its SQL queries, response formats, and authentication. |
+
+**After Phase 6 you can answer**: *"What happens step-by-step when someone sends POST /chat/stream?"*
+
+---
+
+### 🔵 Phase 7: "How Does the Frontend Work?" (Day 8-10)
+
+> **Goal**: Understand the React UI and how it talks to the backend.
+
+| Step | File | Why This Order |
+|------|------|-----------------------|
+| 16th | [04 — Frontend Flow](04_Frontend_Flow.md) | How App.tsx manages state, how the API client works, how SSE streaming works on the browser side. |
+| 17th | [15 — Frontend Components](15_Frontend_Components.md) | All 11 React components — what each one does and which API calls it makes. |
+| 18th | [19 — Execution Traces](19_Execution_Traces.md) | 7 complete end-to-end traces (browser → Vite → FastAPI → database → response → UI). Now you understand both sides. |
+
+**After Phase 7 you can answer**: *"How does a chat message travel from the browser to Gemini AI and back to the screen?"*
+
+---
+
+### 🔵 Phase 8: "How Do I Test, Deploy, and Improve?" (Day 10-12)
+
+> **Goal**: Understand testing, deployment, and what needs work.
+
+| Step | File | Why This Order |
+|------|------|-----------------------|
+| 19th | [16 — Tests](16_Tests.md) | How the test suite works, what's tested, what's NOT tested. |
+| 20th | [17 — Docker](17_Docker.md) | Dockerfile and docker-compose explained. |
+| 21st | [18 — CI/CD](18_CI_CD.md) | GitHub Actions pipeline. |
+| 22nd | [20 — Known Issues](20_Known_Issues.md) | Bugs, gaps, and inconsistencies in the codebase. |
+| 23rd | [21 — Improvements](21_Improvements_For_Future.md) | What could be improved, prioritized by impact. |
+| 24th | [23 — Learning Roadmap](23_Learning_Roadmap.md) | A 6-week structured study plan with exercises and quizzes. |
+
+**After Phase 8 you can answer**: *"How do I run tests? How do I deploy with Docker? What should I build next?"*
+
+---
+
+## 🗺️ Quick Reference: File → Phase Mapping
+
+| Phase | Files | Difficulty |
+|-------|-------|-----------|
+| 🟢 Phase 1 | 22, 01 | Beginner |
+| 🟢 Phase 2 | 08, 24 | Beginner |
+| 🟢 Phase 3 | 02 | Beginner |
+| 🟡 Phase 4 | 05, 09 | Intermediate |
+| 🟡 Phase 5 | 07, 13, 12, 14 | Intermediate |
+| 🟡 Phase 6 | 11, 10, 03, 06 | Intermediate |
+| 🔵 Phase 7 | 04, 15, 19 | Advanced |
+| 🔵 Phase 8 | 16, 17, 18, 20, 21, 23 | Advanced |
+
+---
+
+## 💡 Tips for Beginners
+
+1. **Keep `22_Glossary.md` open at all times.** When you see a term you don't know, look it up.
+2. **Keep `24_Project_Map.md` open at all times.** When a guide mentions a file, look up what it does.
+3. **Open the actual source code** side-by-side with the guide. Read the guide, then look at the code.
+4. **Don't rush.** Each phase should take 1-2 days. It's better to deeply understand Phase 5 than to skim all 24 files.
+5. **If Phase 5 (data layer) confuses you**, do this first:
+   - Watch a 20-minute YouTube video on "SQLAlchemy basics"
+   - Watch a 10-minute video on "Pydantic tutorial"
+   - Then come back to Phase 5
 
 ---
 
