@@ -1,217 +1,266 @@
-# OpenMind AI Platform
+# 🧠 OpenMind AI Platform
 
-**OpenMind AI Platform** is a full-stack, enterprise-grade application for model routing, LLM playground workspace management, agent workflow orchestration, graph memory storage, and document ingestion (RAG).
+[![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React 19](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)](https://react.dev/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-59%2B%20Passing-brightgreen)](tests/)
 
-Built with **FastAPI (Python 3.11+)**, **SQLAlchemy 2.0 (Async)**, **SQLite / PostgreSQL**, and a **React 19 + TypeScript + Vite + TailwindCSS** single-page web dashboard.
-
----
-
-## 🌟 Key Feature Modules
-
-| Module | Description |
-| ------ | ----------- |
-| **Dashboard** | Overview of system metrics (CPU, Memory, VRAM, uptime), active models, ingested sources, and workflows |
-| **Playground** | Multi-session AI chat interface with configurable temperature, top_p, max tokens, system prompts, and JSON mode |
-| **API Explorer** | Postman-like API request builder and logger for testing platform endpoints |
-| **Models** | Model registry for local & cloud AI models (Llama 3, DeepSeek R1, Gemini 2.0/3.5, GPT-4o, CLIP, BGE) |
-| **Sessions** | Workspace session manager with persistent message history and settings |
-| **Memory** | Graph-based memory network spanning Conversation, Semantic, and Long-Term tiers |
-| **Knowledge** | Document ingestion pipeline supporting PDF, Markdown, and TXT upload with character chunking |
-| **Orchestrator** | Multi-step agent workflow execution engine (LLM, Condition, API Call, Memory Fetch, Human Approval) |
-| **Benchmarks** | Model comparison table (TTFT, TPS, latency, accuracy, VRAM usage, cost per 1k) |
-| **Logs** | System event log viewer with severity filtering and hot replay triggers |
-| **Settings** | Platform configuration and theme switcher (Sophisticated Dark, Slate Dark, Cyberpunk Light, etc.) |
+**A unified AI model evaluation, RAG, and orchestration platform** — test and compare LLMs across providers, build knowledge retrieval pipelines, orchestrate multi-step AI workflows, and manage persistent AI memory — all from a single self-hosted environment.
 
 ---
 
-## 📂 Project Directory Structure
+## 🎯 Why OpenMind?
+
+Working with AI models means juggling multiple providers, testing different configurations, and building the infrastructure to make AI actually useful. OpenMind solves this by providing:
+
+- **One platform to test any LLM** — Switch between Gemini, GPT-4o, Llama 3, DeepSeek R1 and compare responses side-by-side with configurable inference parameters
+- **RAG out of the box** — Upload documents (PDF, Markdown, TXT), chunk them, embed them, and retrieve relevant context for your prompts
+- **Persistent AI memory** — Graph-based memory spanning Conversation, Semantic, and Long-Term tiers so your AI remembers context across sessions
+- **Workflow orchestration** — Chain LLM calls, conditions, API integrations, memory lookups, and human approvals into automated multi-step pipelines
+- **OpenAI-compatible gateway** — Any application that speaks OpenAI's API format can route requests through OpenMind with Bearer token authentication
+
+> **Status**: Actively under development. Core platform is functional with API-driven models (Gemini). Expanding to local open-weight model hosting, real vector embeddings, and agentic workflow execution.
+
+---
+
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    CLIENT (React 19 + TypeScript)                    │
+│   Dashboard · Playground · Models · Sessions · Memory · Knowledge   │
+│   Orchestrator · Benchmarks · API Explorer · Logs · Settings        │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │  HTTP (Vite proxy: :3000 → :8000)
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    API LAYER (FastAPI · 40+ Endpoints)               │
+│   Routes · Pydantic Validation · Auth · Error Handling · SSE        │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    SERVICE LAYER (Business Logic)                    │
+│   ChatService · ModelService · SessionService · KnowledgeService    │
+│   WorkflowService · MemoryService · MonitoringService               │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    DATA LAYER (Repository Pattern)                   │
+│   BaseRepository[T] → Async CRUD · 11 Domain Repositories          │
+└────────────────────────────────┬────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    PERSISTENCE & AI PROVIDERS                        │
+│   SQLite / PostgreSQL 16 · pgvector · Google Gemini AI              │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Design patterns**: Application Factory · Repository Pattern · Service Layer · Dependency Injection · DTO (Pydantic) · SSE Streaming · Singleton Config · Lifespan Context Manager
+
+---
+
+## ✅ Features
+
+### Core AI Capabilities
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **AI Playground** | ✅ Live | Multi-session chat with configurable temperature, top_p, max_tokens, system prompts, and JSON mode |
+| **SSE Streaming** | ✅ Live | Real-time token-by-token response streaming (OpenAI SSE protocol) |
+| **Model Registry** | ✅ Live | Register, track, and compare local & cloud AI models (Llama 3, Gemini, GPT-4o, DeepSeek, CLIP, BGE) |
+| **Model Benchmarks** | ✅ Live | Compare TTFT, TPS, latency, accuracy, VRAM usage, and cost per 1K tokens |
+| **OpenAI Gateway** | ✅ Live | OpenAI-compatible `/chat/completions` and `/embeddings` endpoints with Bearer auth |
+| **API Key Management** | ✅ Live | Secure key generation with bcrypt hashing and prefix-based fast lookup |
+
+### Knowledge & RAG
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Document Ingestion** | ✅ Live | Upload PDF, Markdown, TXT files with automatic text extraction |
+| **Text Chunking** | ✅ Live | Character-based chunking for RAG preparation |
+| **Vector Embeddings** | 🚧 In Progress | pgvector infrastructure installed, real embedding generation planned |
+| **Semantic Retrieval** | 🚧 Planned | Embedding-based semantic search over knowledge sources |
+
+### Memory & Orchestration
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Memory Graph** | ✅ Live | Graph-based nodes and connections across Conversation, Semantic, Long-Term tiers |
+| **Memory Logs** | ✅ Live | Track memory operations and tier transitions |
+| **Workflow Definitions** | ✅ Live | Define multi-step workflows with LLM, Condition, API Call, Memory Fetch, Human Approval steps |
+| **Workflow Execution** | 🚧 In Progress | Step execution engine (currently simulated, real execution planned) |
+
+### Platform Infrastructure
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **System Monitoring** | ✅ Live | Real-time CPU, RAM, DB health, and uptime tracking |
+| **Structured Logging** | ✅ Live | JSON/text logging via structlog with severity filtering |
+| **Session Management** | ✅ Live | Persistent chat sessions with full message history |
+| **Docker Deployment** | ✅ Live | Multi-stage Dockerfile + Docker Compose with PostgreSQL |
+| **CI/CD Pipeline** | ✅ Live | GitHub Actions with linting (Ruff), type checking (mypy), and testing (pytest) |
+| **Test Suite** | ✅ Live | 59+ unit and integration tests |
+
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+| Technology | Purpose |
+|-----------|---------|
+| Python 3.11+ | Core language |
+| FastAPI 0.115 | Async web framework with auto-generated OpenAPI docs |
+| SQLAlchemy 2.0 (Async) | ORM with async session management |
+| Pydantic 2.x | Request/response validation and serialization |
+| Google Generative AI | Gemini model integration |
+| SQLite / PostgreSQL 16 | Development / Production database |
+| pgvector | Vector similarity search extension |
+| structlog | Structured logging |
+| bcrypt | API key hashing |
+| psutil | System resource monitoring |
+
+### Frontend
+| Technology | Purpose |
+|-----------|---------|
+| React 19 + TypeScript | Dashboard UI |
+| Vite 6 | Build tool and dev server |
+| TailwindCSS v4 | Styling |
+| Framer Motion | Animations |
+
+### Infrastructure
+| Technology | Purpose |
+|-----------|---------|
+| Docker + Docker Compose | Containerization and orchestration |
+| GitHub Actions | CI/CD pipeline |
+| pytest + pytest-asyncio | Testing framework |
+| Ruff + mypy | Linting and type checking |
+
+---
+
+## 📂 Project Structure
 
 ```text
 openmind-ai-platform/
-├── app/                        # FastAPI Backend Application
-│   ├── api/                    # API Route Handlers
-│   │   ├── routes/             # Feature domain routes
-│   │   │   ├── api_keys.py     # API key management
-│   │   │   ├── benchmarks.py   # Benchmark data endpoints
-│   │   │   ├── chat.py         # Chat completion & SSE streaming
-│   │   │   ├── gateway.py      # OpenAI-compatible API gateway
-│   │   │   ├── health.py       # Health check & root endpoints
-│   │   │   ├── knowledge.py    # Document upload & knowledge sources
-│   │   │   ├── logs.py         # System log viewer endpoints
-│   │   │   ├── memory.py       # Memory graph nodes & logs
-│   │   │   ├── models.py       # AI model registry CRUD
-│   │   │   ├── monitoring.py   # Real system status & metrics
-│   │   │   ├── sessions.py     # Playground chat sessions
-│   │   │   ├── settings.py     # System configuration settings
-│   │   │   └── workflows.py    # Workflow definitions & step execution
-│   │   └── router.py           # Central APIRouter mounting all routes
-│   ├── core/                   # Core Infrastructure
-│   │   ├── config.py           # Pydantic environment settings
-│   │   ├── database.py         # Async SQLAlchemy engine & session factory
-│   │   ├── lifespan.py         # App startup/shutdown lifespan manager
-│   │   ├── logging.py          # Structlog configuration
-│   │   └── seed.py             # Idempotent database seed script
-│   ├── models/                 # SQLAlchemy ORM Models
-│   │   ├── api_key.py          # ApiKeyRecord
-│   │   ├── base.py             # Base model, TimestampMixin, UUIDMixin
-│   │   ├── benchmark.py        # BenchmarkRecord
-│   │   ├── knowledge.py        # KnowledgeSourceRecord
-│   │   ├── log_entry.py        # LogEntryRecord
-│   │   ├── memory.py           # MemoryNodeRecord, MemoryConnectionRecord
-│   │   ├── memory_log.py       # MemoryLogRecord
-│   │   ├── model.py            # ModelRecord
-│   │   ├── request_log.py      # RequestLogRecord
-│   │   ├── session.py          # SessionRecord, MessageRecord
-│   │   ├── setting.py          # SystemSettingRecord
-│   │   └── workflow.py         # WorkflowRecord, WorkflowStepRecord
-│   ├── schemas/                # Pydantic DTOs & Validation Schemas
-│   │   ├── chat.py             # ChatRequest, ChatResponse, ChatStreamResponse
-│   │   ├── errors.py           # APIError standard response
-│   │   ├── health.py           # HealthResponse
-│   │   ├── models.py           # ModelCreateRequest, ModelUpdateRequest, ModelMetadata
-│   │   └── sessions.py         # SessionCreateRequest, SessionUpdateRequest, MessageCreateRequest
-│   ├── services/               # Domain Business Logic
-│   │   ├── api_key_service.py  # API key generation & fast prefix lookup
-│   │   ├── chat_service.py     # Gemini AI integration, SSE streaming, token counting
-│   │   ├── domain_services.py  # Knowledge, Workflow, Memory, Log, Settings, Benchmark services
-│   │   ├── model_service.py    # Model registry service
-│   │   ├── monitoring_service.py # System status & resource monitoring
-│   │   └── session_service.py  # Session & message history service
-│   └── storage/                # Repository Pattern Data Access Layer
-│       ├── api_key_repository.py
-│       ├── base_repository.py  # Generic Async CRUD BaseRepository
-│       ├── knowledge_repository.py
-│       ├── memory_repository.py
-│       ├── misc_repositories.py
-│       ├── model_repository.py
-│       ├── request_log_repository.py
-│       ├── session_repository.py
-│       └── workflow_repository.py
-├── client/                     # React 19 + TypeScript Frontend
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── client.ts       # Type-safe API client targeting Vite proxy
-│   │   ├── components/         # 11 Feature View Components
-│   │   ├── App.tsx             # Main App layout, router & backend data sync
-│   │   ├── data.ts             # Initial fallback data
-│   │   └── types.ts            # TypeScript interfaces
-│   ├── package.json
-│   └── vite.config.ts          # Vite config with backend proxy on port 8000
-├── tests/                      # Pytest Suite (59 tests)
-│   ├── api/                    # API integration tests (chat, models, sessions)
-│   ├── services/               # Unit tests for domain services
-│   └── conftest.py             # Shared AsyncClient fixtures
-├── docker-compose.yml          # Production Docker Compose config
+├── app/                        # FastAPI Backend
+│   ├── api/routes/             # 13 route modules (chat, models, gateway, knowledge, etc.)
+│   ├── core/                   # Config, database, lifespan, logging, seed
+│   ├── models/                 # 12 SQLAlchemy ORM models (11 database tables)
+│   ├── schemas/                # Pydantic request/response DTOs
+│   ├── services/               # Business logic (Chat, Model, Session, Knowledge, Workflow, Memory, etc.)
+│   └── storage/                # Repository pattern data access layer
+├── client/                     # React 19 + TypeScript SPA (11 feature views)
+├── tests/                      # pytest suite (59+ tests)
+├── docker-compose.yml          # Production Docker Compose (FastAPI + PostgreSQL + pgAdmin)
 ├── Dockerfile                  # Multi-stage production build
-├── requirements.txt            # Python dependencies
-└── pyproject.toml              # Pytest, Ruff, and Mypy configuration
+└── requirements.txt            # Python dependencies
 ```
 
 ---
 
-## 🚀 Quick Start Guide
+## 🚀 Quick Start
 
-### 1. Prerequisites
+### Prerequisites
 - **Python 3.11+**
 - **Node.js 18+**
-- *(Optional)* **Docker & Docker Compose** (for PostgreSQL)
+- *(Optional)* **Docker & Docker Compose** for PostgreSQL
+
+### Backend
+
+```bash
+# Create virtual environment
+python -m venv .venv
+
+# Activate (Windows PowerShell)
+.\.venv\Scripts\Activate.ps1
+
+# Activate (Linux/macOS)
+source .venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment
+cp .env.example .env
+# Add your GEMINI_API_KEY in .env
+
+# Seed database
+python -m app.core.seed
+
+# Start server
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+- **API**: http://localhost:8000
+- **Swagger Docs**: http://localhost:8000/docs
+
+### Frontend
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+- **Dashboard**: http://localhost:3000
 
 ---
 
-### 2. Backend Setup
-
-1. **Create and Activate Virtual Environment:**
-   ```bash
-   python -m venv .venv
-   
-   # Windows (PowerShell)
-   .\.venv\Scripts\Activate.ps1
-   
-   # Linux / macOS
-   source .venv/bin/activate
-   ```
-
-2. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. **Configure Environment Variables:**
-   Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-   Add your Gemini API Key in `.env`:
-   ```ini
-   GEMINI_API_KEY=your_gemini_api_key_here
-   ```
-   *(By default, `DATABASE_URL` uses local SQLite `sqlite+aiosqlite:///./openmind.db` for zero-setup execution).*
-
-4. **Initialize and Seed Database:**
-   ```bash
-   python -m app.core.seed
-   ```
-
-5. **Start the FastAPI Server:**
-   ```bash
-   python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-   ```
-   - **Backend API**: `http://localhost:8000`
-   - **Interactive API Docs (Swagger)**: `http://localhost:8000/docs`
-
----
-
-### 3. Frontend Setup
-
-In a new terminal window:
-
-1. **Navigate to the `client/` Directory:**
-   ```bash
-   cd client
-   ```
-
-2. **Install Dependencies:**
-   ```bash
-   npm install
-   ```
-
-3. **Start the Vite Dev Server:**
-   ```bash
-   npm run dev
-   ```
-   - **Frontend App**: `http://localhost:3000`
-
----
-
-## 🔌 API Endpoints Summary
+## 🔌 API Endpoints
 
 ### OpenAI-Compatible Gateway (`/api/v1`)
-- `POST /api/v1/chat/completions` — OpenAI-compatible chat completion (with Bearer token auth)
-- `POST /api/v1/embeddings` — OpenAI-compatible text embeddings
-- `GET /api/v1/models` — OpenAI-compatible model listing
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/v1/chat/completions` | Chat completion with Bearer token auth |
+| `POST` | `/api/v1/embeddings` | Text embeddings |
+| `GET` | `/api/v1/models` | Model listing |
 
-### Core Domain APIs
-- `POST /chat` & `POST /chat/stream` — Main chat completions & SSE streaming
-- `GET /models`, `POST /models`, `PUT /models/{id}`, `DELETE /models/{id}` — Model registry CRUD
-- `GET /sessions`, `POST /sessions`, `GET /sessions/{id}`, `PUT /sessions/{id}`, `DELETE /sessions/{id}` — Sessions
-- `GET /knowledge`, `POST /knowledge/upload`, `DELETE /knowledge/{id}` — Document ingestion
-- `GET /workflows`, `POST /workflows`, `POST /workflows/{id}/execute` — Workflow orchestration
-- `GET /memory/nodes`, `POST /memory/nodes`, `GET /memory/logs` — Graph memory
-- `GET /api-keys`, `POST /api-keys`, `DELETE /api-keys/{id}` — API Key management
-- `GET /api/status` — Real-time CPU, GPU VRAM, Memory, and DB monitoring
+### Core APIs
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/chat` `/chat/stream` | Chat completions & SSE streaming |
+| `CRUD` | `/models` | AI model registry |
+| `CRUD` | `/sessions` | Chat session management |
+| `POST` | `/knowledge/upload` | Document ingestion |
+| `CRUD` | `/workflows` | Workflow orchestration |
+| `CRUD` | `/memory/nodes` | Memory graph management |
+| `CRUD` | `/api-keys` | API key management |
+| `GET` | `/api/status` | System monitoring |
 
 ---
 
-## 🧪 Running Tests
-
-Run the backend pytest suite (59 unit and integration tests):
+## 🧪 Testing
 
 ```bash
 python -m pytest
 ```
 
+59+ unit and integration tests covering API endpoints, services, and configuration.
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] **Local Model Hosting** — Integrate Ollama/vLLM for running open-weight models (Llama 3, DeepSeek R1, Mistral) locally
+- [ ] **Real Vector Embeddings** — Generate embeddings via Gemini/OpenAI embedding models, store in pgvector
+- [ ] **Semantic RAG Retrieval** — Embedding-based similarity search over knowledge documents
+- [ ] **Agentic Workflow Execution** — Real step executors for LLM calls, API requests, conditions, and memory operations
+- [ ] **Multi-Provider Model Routing** — Dynamic routing across Gemini, OpenAI, Anthropic, and local models
+- [ ] **Alembic Migrations** — Production-ready database schema management
+- [ ] **Authentication** — JWT-based user authentication and role management
+- [ ] **WebSocket Streaming** — Real-time system updates and workflow progress
+
+---
+
+## 👤 Author
+
+**Basil C K** — AI Engineer
+
+- Portfolio: [basilbaasi.github.io](https://basilbaasi.github.io)
+- GitHub: [github.com/Basilbaasi](https://github.com/Basilbaasi)
+- Email: basilck618@gmail.com
+
 ---
 
 ## 📜 License
 
-MIT License. Developed for the **OpenMind AI Platform**.
+MIT License. See [LICENSE](LICENSE) for details.
