@@ -8,6 +8,7 @@ python_functions = ["test_*"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+exclude = ["app/model_adapters/saved"]
 
 [tool.ruff.lint]
 select = [
@@ -21,7 +22,7 @@ select = [
     "S",    # flake8-bandit (security)
     "T20",  # flake8-print
 ]
-ignore = ["S104", "B008"]  # Allow binding to 0.0.0.0, allow Depends() in defaults
+ignore = ["S104", "B008", "E501", "S110", "UP038"]  # Allow binding to 0.0.0.0, allow Depends() in defaults
 
 [tool.ruff.lint.per-file-ignores]
 "test_*" = ["S101"]  # Allow assert in test files

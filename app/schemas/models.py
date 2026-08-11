@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 
+
 class ModelCreateRequest(BaseModel):
     id: str = Field(..., description="Unique model identifier")
     name: str = Field(..., description="Display name")
@@ -43,9 +44,7 @@ class ModelMetadata(BaseModel):
     provider: str = Field(
         ..., description="The entity hosting/providing the model (e.g., 'local', 'openai')"
     )
-    version: str = Field(
-        "1.0", description="Model version string"
-    )
+    version: str = Field("1.0", description="Model version string")
     capabilities: list[str] = Field(
         default_factory=list,
         description="List of supported features (e.g., 'chat', 'vision', 'tools')",
@@ -74,4 +73,3 @@ class ModelListResponse(BaseModel):
 
     models: list[ModelMetadata] = Field(..., description="List of available models")
     total: int = Field(..., description="Total number of available models")
-

@@ -57,7 +57,9 @@ class SessionResponse(BaseModel):
     created_at: datetime = Field(..., description="Timestamp when the session was created")
     updated_at: datetime = Field(..., description="Timestamp of the last interaction")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Session metadata")
-    messages: list[MessageResponse] = Field(default_factory=list, description="Messages in this session")
+    messages: list[MessageResponse] = Field(
+        default_factory=list, description="Messages in this session"
+    )
 
 
 class SessionListResponse(BaseModel):

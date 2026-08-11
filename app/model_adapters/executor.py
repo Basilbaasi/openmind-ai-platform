@@ -19,13 +19,12 @@ PRE-IMPORTED MODULES available to adapter code:
   - requests, base64, json
 """
 
-import base64
 import ast
+import base64
 import io
 import json
 import logging
 import os
-import sys
 import traceback
 from contextlib import redirect_stdout
 
@@ -47,7 +46,9 @@ def validate_adapter_code(adapter_code: str) -> None:
     try:
         tree = ast.parse(adapter_code)
     except SyntaxError as exc:
-        raise ValueError(f"Adapter code has a syntax error on line {exc.lineno}: {exc.msg}") from exc
+        raise ValueError(
+            f"Adapter code has a syntax error on line {exc.lineno}: {exc.msg}"
+        ) from exc
 
     referenced_names = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
     missing = {"api_key", "messages", "stream"} - referenced_names
@@ -68,15 +69,23 @@ def validate_adapter_code(adapter_code: str) -> None:
             )
 
         if isinstance(node, ast.Dict):
-            for key, value in zip(node.keys, node.values):
-                if isinstance(key, ast.Constant) and key.value == "messages" and not (
-                    isinstance(value, ast.Name) and value.id == "messages"
+            for key, value in zip(node.keys, node.values, strict=False):
+                if (
+                    isinstance(key, ast.Constant)
+                    and key.value == "messages"
+                    and not (isinstance(value, ast.Name) and value.id == "messages")
                 ):
-                    raise ValueError("The provider payload must use 'messages': messages to preserve chat context.")
-                if isinstance(key, ast.Constant) and key.value == "stream" and not (
-                    isinstance(value, ast.Name) and value.id == "stream"
+                    raise ValueError(
+                        "The provider payload must use 'messages': messages to preserve chat context."
+                    )
+                if (
+                    isinstance(key, ast.Constant)
+                    and key.value == "stream"
+                    and not (isinstance(value, ast.Name) and value.id == "stream")
                 ):
-                    raise ValueError("The provider payload must use 'stream': stream for platform streaming.")
+                    raise ValueError(
+                        "The provider payload must use 'stream': stream for platform streaming."
+                    )
 
 
 def ensure_adapters_dir() -> None:
@@ -104,7 +113,7 @@ def get_saved_adapter_code(model_id: str) -> str | None:
     safe_name = model_id.replace("/", "_").replace("\\", "_").replace(" ", "_")
     filepath = os.path.join(ADAPTERS_DIR, f"{safe_name}.py")
     try:
-        with open(filepath, "r", encoding="utf-8") as adapter_file:
+        with open(filepath, encoding="utf-8") as adapter_file:
             return adapter_file.read()
     except FileNotFoundError:
         return None
@@ -113,7 +122,8 @@ def get_saved_adapter_code(model_id: str) -> str | None:
 def get_env_key_for_model(model_id: str) -> str:
     """Sanitize the model ID to be a valid environment variable name."""
     import re
-    sanitized = re.sub(r'[^a-zA-Z0-9_]', '_', model_id).upper()
+
+    sanitized = re.sub(r"[^a-zA-Z0-9_]", "_", model_id).upper()
     return f"MODEL_{sanitized}_API_KEY"
 
 
@@ -128,7 +138,7 @@ def set_env_var(key: str, value: str) -> None:
     updated = False
 
     if os.path.exists(env_path):
-        with open(env_path, "r", encoding="utf-8") as f:
+        with open(env_path, encoding="utf-8") as f:
             lines = f.readlines()
 
     for i, line in enumerate(lines):
@@ -157,7 +167,7 @@ def delete_env_var(key: str) -> None:
         return
 
     lines = []
-    with open(env_path, "r", encoding="utf-8") as f:
+    with open(env_path, encoding="utf-8") as f:
         lines = f.readlines()
 
     new_lines = [line for line in lines if not line.strip().startswith(f"{key}=")]
@@ -176,7 +186,7 @@ def get_model_api_key(model_id: str) -> str:
     # Fallback: Read directly from .env file
     env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".env"))
     if os.path.exists(env_path):
-        with open(env_path, "r", encoding="utf-8") as f:
+        with open(env_path, encoding="utf-8") as f:
             for line in f:
                 if line.strip().startswith(f"{key}="):
                     return line.strip().split("=", 1)[1]
@@ -211,7 +221,9 @@ def delete_adapter_file(model_id: str) -> None:
         if os.path.exists(filepath_saved):
             try:
                 os.remove(filepath_saved)
-                logger.info("Deleted adapter file for model '%s' from saved/: %s", model_id, filepath_saved)
+                logger.info(
+                    "Deleted adapter file for model '%s' from saved/: %s", model_id, filepath_saved
+                )
             except Exception as e:
                 logger.error("Failed to delete saved adapter file: %s", e)
 
@@ -220,7 +232,11 @@ def delete_adapter_file(model_id: str) -> None:
         if os.path.exists(filepath_parent):
             try:
                 os.remove(filepath_parent)
-                logger.info("Deleted adapter file for model '%s' from parent/: %s", model_id, filepath_parent)
+                logger.info(
+                    "Deleted adapter file for model '%s' from parent/: %s",
+                    model_id,
+                    filepath_parent,
+                )
             except Exception as e:
                 logger.error("Failed to delete parent adapter file: %s", e)
 
@@ -436,7 +452,11 @@ def extract_text_from_chunk(printed_line: str) -> str:
             if isinstance(candidates, list) and candidates:
                 parts = (candidates[0].get("content") or {}).get("parts", [])
                 if isinstance(parts, list):
-                    return "".join(str(part["text"]) for part in parts if isinstance(part, dict) and part.get("text"))
+                    return "".join(
+                        str(part["text"])
+                        for part in parts
+                        if isinstance(part, dict) and part.get("text")
+                    )
 
             # It was valid provider JSON, even if it contained no visible text.
             return ""
@@ -504,16 +524,24 @@ def execute_model_adapter_stream(
         except requests.HTTPError as exc:
             status_code = exc.response.status_code if exc.response is not None else None
             if status_code in (401, 403):
-                q.put("Error: The provider rejected this model's API key. Check the key and redeploy the model configuration.")
+                q.put(
+                    "Error: The provider rejected this model's API key. Check the key and redeploy the model configuration."
+                )
             elif status_code:
-                q.put(f"Error: The provider returned HTTP {status_code}. Check the model ID and provider configuration.")
+                q.put(
+                    f"Error: The provider returned HTTP {status_code}. Check the model ID and provider configuration."
+                )
             else:
                 q.put("Error: The provider request failed before a response was received.")
         except requests.RequestException:
-            q.put("Error: Could not reach the model provider. Check the provider URL and network connection.")
+            q.put(
+                "Error: Could not reach the model provider. Check the provider URL and network connection."
+            )
         except Exception:
             logger.exception("Model adapter execution failed")
-            q.put("Error: The model adapter configuration is invalid. Review its adapter code and settings.")
+            q.put(
+                "Error: The model adapter configuration is invalid. Review its adapter code and settings."
+            )
         finally:
             q.put(None)  # Sentinel to end stream
 

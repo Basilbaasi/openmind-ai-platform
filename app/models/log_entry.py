@@ -11,7 +11,9 @@ class LogEntryRecord(Base, UUIDMixin, TimestampMixin):
 
     __tablename__ = "log_entries"
 
-    severity: Mapped[str] = mapped_column(String(10), nullable=False, index=True)  # INFO, WARN, ERROR
+    severity: Mapped[str] = mapped_column(
+        String(10), nullable=False, index=True
+    )  # INFO, WARN, ERROR
     source: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
     message: Mapped[str] = mapped_column(Text, nullable=False)
     metadata_json: Mapped[str | None] = mapped_column(Text, nullable=True)

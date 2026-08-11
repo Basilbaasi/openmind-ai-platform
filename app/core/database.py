@@ -34,6 +34,7 @@ engine = create_async_engine(
 
 
 if settings.DATABASE_URL.startswith("sqlite"):
+
     @event.listens_for(engine.sync_engine, "connect")
     def _configure_sqlite_connection(dbapi_connection, _connection_record) -> None:
         """Allow short concurrent reads/writes without SQLite lock failures."""
@@ -42,6 +43,7 @@ if settings.DATABASE_URL.startswith("sqlite"):
         cursor.execute("PRAGMA synchronous=NORMAL")
         cursor.execute("PRAGMA busy_timeout=5000")
         cursor.close()
+
 
 async_session_factory = async_sessionmaker(
     engine,

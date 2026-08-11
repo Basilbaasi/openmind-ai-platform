@@ -7,10 +7,8 @@ with Bearer authentication via API keys.
 
 import json
 import time
-import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -103,7 +101,9 @@ async def gateway_chat(
         status=200,
         time_ms=elapsed_ms,
         size_bytes=len(response_body),
-        request_headers=json.dumps({k: v for k, v in headers_dict.items() if k.lower() != "authorization"}),
+        request_headers=json.dumps(
+            {k: v for k, v in headers_dict.items() if k.lower() != "authorization"}
+        ),
         request_body=json.dumps(body),
         response_body=response_body,
     )
@@ -150,5 +150,8 @@ async def gateway_embeddings(
             }
         ],
         "model": body.get("model", "bge-large-en-v1.5"),
-        "usage": {"prompt_tokens": len(str(input_text).split()), "total_tokens": len(str(input_text).split())},
+        "usage": {
+            "prompt_tokens": len(str(input_text).split()),
+            "total_tokens": len(str(input_text).split()),
+        },
     }

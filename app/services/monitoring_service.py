@@ -34,6 +34,7 @@ class MonitoringService:
         pg_connections = 0
         try:
             from sqlalchemy import text
+
             from app.core.database import engine
 
             async with engine.connect() as conn:

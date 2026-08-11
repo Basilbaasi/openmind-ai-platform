@@ -57,7 +57,9 @@ async def get_session(
     """GET /sessions/{session_id} endpoint."""
     result = await service.get_session(session_id)
     if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found."
+        )
     return result.model_dump()
 
 
@@ -67,12 +69,16 @@ async def get_session(
     description="Updates session configuration (temperature, model, etc.).",
 )
 async def update_session(
-    session_id: str, params: SessionUpdateRequest, service: SessionService = Depends(get_session_service)
+    session_id: str,
+    params: SessionUpdateRequest,
+    service: SessionService = Depends(get_session_service),
 ) -> dict:
     """PUT /sessions/{session_id} endpoint."""
     result = await service.update_session_params(session_id, params.model_dump(exclude_unset=True))
     if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Session {session_id} not found."
+        )
     return result.model_dump()
 
 
@@ -112,7 +118,9 @@ async def list_messages(
     description="Adds a new message to the conversation.",
 )
 async def add_message(
-    session_id: str, data: MessageCreateRequest, service: SessionService = Depends(get_session_service)
+    session_id: str,
+    data: MessageCreateRequest,
+    service: SessionService = Depends(get_session_service),
 ) -> dict:
     """POST /sessions/{session_id}/messages endpoint."""
     return await service.add_message(

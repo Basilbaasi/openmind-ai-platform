@@ -9,7 +9,6 @@ import json
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import get_db
 from app.storage.knowledge_repository import KnowledgeRepository
 from app.storage.memory_repository import MemoryConnectionRepository, MemoryNodeRepository
 from app.storage.misc_repositories import (
@@ -19,7 +18,6 @@ from app.storage.misc_repositories import (
     SettingsRepository,
 )
 from app.storage.workflow_repository import WorkflowRepository, WorkflowStepRepository
-
 
 # ── Knowledge Service ────────────────────────────────────────────
 
@@ -64,7 +62,9 @@ class KnowledgeService:
     async def delete_source(self, source_id: str) -> bool:
         return await self.repo.delete(source_id)
 
-    async def update_progress(self, source_id: str, progress: float, status: str | None = None) -> dict | None:
+    async def update_progress(
+        self, source_id: str, progress: float, status: str | None = None
+    ) -> dict | None:
         update_data: dict = {"progress": progress}
         if status:
             update_data["status"] = status
@@ -99,7 +99,11 @@ class WorkflowService:
         steps_data = data.pop("steps", [])
         record = await self.wf_repo.create(**data)
         for i, step in enumerate(steps_data):
-            config_str = json.dumps(step.get("config", {})) if isinstance(step.get("config"), dict) else step.get("config", "{}")
+            config_str = (
+                json.dumps(step.get("config", {}))
+                if isinstance(step.get("config"), dict)
+                else step.get("config", "{}")
+            )
             await self.step_repo.create(
                 workflow_id=record.id,
                 name=step["name"],
@@ -123,7 +127,11 @@ class WorkflowService:
                 for step in existing.steps:
                     await self.step_repo.delete(step.id)
             for i, step in enumerate(steps_data):
-                config_str = json.dumps(step.get("config", {})) if isinstance(step.get("config"), dict) else step.get("config", "{}")
+                config_str = (
+                    json.dumps(step.get("config", {}))
+                    if isinstance(step.get("config"), dict)
+                    else step.get("config", "{}")
+                )
                 await self.step_repo.create(
                     workflow_id=workflow_id,
                     name=step["name"],
@@ -166,13 +174,15 @@ class WorkflowService:
             else:
                 detail = f"Executed step '{step.name}' ({step.type})"
 
-            step_results.append({
-                "step_id": step.id,
-                "name": step.name,
-                "type": step.type,
-                "status": status_str,
-                "output": detail,
-            })
+            step_results.append(
+                {
+                    "step_id": step.id,
+                    "name": step.name,
+                    "type": step.type,
+                    "status": status_str,
+                    "output": detail,
+                }
+            )
 
         now = datetime.now(UTC).strftime("%Y-%m-%d %H:%M")
         await self.wf_repo.update(workflow_id, last_run=now)
@@ -192,12 +202,14 @@ class WorkflowService:
                 config = json.loads(s.config) if s.config else {}
             except (json.JSONDecodeError, TypeError):
                 config = {}
-            steps.append({
-                "id": s.id,
-                "name": s.name,
-                "type": s.type,
-                "config": config,
-            })
+            steps.append(
+                {
+                    "id": s.id,
+                    "name": s.name,
+                    "type": s.type,
+                    "config": config,
+                }
+            )
         return {
             "id": record.id,
             "name": record.name,
@@ -225,15 +237,17 @@ class MemoryService:
         result = []
         for n in nodes:
             connections = await self.conn_repo.get_connections_for_node(n.id)
-            result.append({
-                "id": n.id,
-                "label": n.label,
-                "tier": n.tier,
-                "category": n.category,
-                "timestamp": n.created_at.isoformat() if n.created_at else "",
-                "value": n.value,
-                "connections": [c.target_node_id for c in connections],
-            })
+            result.append(
+                {
+                    "id": n.id,
+                    "label": n.label,
+                    "tier": n.tier,
+                    "category": n.category,
+                    "timestamp": n.created_at.isoformat() if n.created_at else "",
+                    "value": n.value,
+                    "connections": [c.target_node_id for c in connections],
+                }
+            )
         return result
 
     async def create_node(self, data: dict) -> dict:
@@ -296,7 +310,9 @@ class LogService:
             for r in records
         ]
 
-    async def create_log(self, severity: str, source: str, message: str, metadata: dict | None = None) -> dict:
+    async def create_log(
+        self, severity: str, source: str, message: str, metadata: dict | None = None
+    ) -> dict:
         record = await self.repo.create(
             severity=severity,
             source=source,
@@ -349,6 +365,3 @@ class BenchmarkService:
             }
             for r in records
         ]
-
-
-

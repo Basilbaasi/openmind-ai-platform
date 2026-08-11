@@ -1,7 +1,6 @@
 """Session and message repositories."""
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.session import MessageRecord, SessionRecord

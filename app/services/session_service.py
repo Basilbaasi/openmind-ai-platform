@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.session import MessageRecord, SessionRecord
-from app.schemas.sessions import SessionCreateRequest, SessionResponse, MessageResponse
+from app.models.session import SessionRecord
+from app.schemas.sessions import MessageResponse, SessionCreateRequest, SessionResponse
 from app.storage.session_repository import MessageRepository, SessionRepository
 
 
@@ -26,7 +26,9 @@ class SessionService:
             temperature=request.metadata.get("temperature", 0.7) if request.metadata else 0.7,
             max_tokens=request.metadata.get("max_tokens", 1024) if request.metadata else 1024,
             top_p=request.metadata.get("top_p", 0.9) if request.metadata else 0.9,
-            presence_penalty=request.metadata.get("presence_penalty", 0.0) if request.metadata else 0.0,
+            presence_penalty=request.metadata.get("presence_penalty", 0.0)
+            if request.metadata
+            else 0.0,
             json_mode=request.metadata.get("json_mode", False) if request.metadata else False,
         )
         return self._to_response(record)

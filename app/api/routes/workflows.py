@@ -45,7 +45,9 @@ async def update_workflow(
     return result
 
 
-@router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a workflow")
+@router.delete(
+    "/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a workflow"
+)
 async def delete_workflow(
     workflow_id: str, service: WorkflowService = Depends(get_workflow_service)
 ) -> None:

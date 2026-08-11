@@ -19,9 +19,7 @@ async def list_nodes(service: MemoryService = Depends(get_memory_service)) -> li
 
 
 @router.post("/nodes", status_code=201, summary="Create a memory node")
-async def create_node(
-    data: dict, service: MemoryService = Depends(get_memory_service)
-) -> dict:
+async def create_node(data: dict, service: MemoryService = Depends(get_memory_service)) -> dict:
     return await service.create_node(data)
 
 

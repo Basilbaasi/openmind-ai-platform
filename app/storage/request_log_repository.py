@@ -13,11 +13,7 @@ class RequestLogRepository(BaseRepository[RequestLogRecord]):
 
     async def get_recent(self, limit: int = 50) -> list[RequestLogRecord]:
         """Fetch the most recent request logs."""
-        stmt = (
-            select(RequestLogRecord)
-            .order_by(RequestLogRecord.created_at.desc())
-            .limit(limit)
-        )
+        stmt = select(RequestLogRecord).order_by(RequestLogRecord.created_at.desc()).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

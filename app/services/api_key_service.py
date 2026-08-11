@@ -2,9 +2,8 @@
 API Key service — generation, validation, and management.
 """
 
-from datetime import UTC, datetime
 import secrets
-import uuid
+from datetime import UTC, datetime
 
 import bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -45,7 +44,11 @@ class ApiKeyService:
         """Validate a raw API key against stored hashes using fast prefix lookup."""
         prefix = raw_key[:12] + "..."
         record = await self.repo.get_by_prefix(prefix)
-        if record and record.is_active and bcrypt.checkpw(raw_key.encode(), record.key_hash.encode()):
+        if (
+            record
+            and record.is_active
+            and bcrypt.checkpw(raw_key.encode(), record.key_hash.encode())
+        ):
             record.last_used_at = datetime.now(UTC).isoformat()
             await self.repo.session.flush()
             return True

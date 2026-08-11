@@ -43,11 +43,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
 
     # Database – create tables if they don't exist (dev convenience)
-    from app.core.database import engine
-    from app.models.base import Base
-
     # Import all models so Base.metadata knows about them
     import app.models  # noqa: F401
+    from app.core.database import engine
+    from app.models.base import Base
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

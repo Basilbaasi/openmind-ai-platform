@@ -1,6 +1,6 @@
 """Knowledge base routes — document upload, listing, deletion."""
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -58,20 +58,24 @@ async def upload_document(
     chunks_count = max(1, len(text_content) // chunk_size)
 
     # Create DB record with Indexed status
-    result = await service.create_source({
-        "name": file.filename,
-        "type": file_type,
-        "size_bytes": len(content),
-        "chunks_count": chunks_count,
-        "embedding_size": 1024,
-        "status": "Indexed",
-        "progress": 100.0,
-        "file_path": file_path,
-    })
+    result = await service.create_source(
+        {
+            "name": file.filename,
+            "type": file_type,
+            "size_bytes": len(content),
+            "chunks_count": chunks_count,
+            "embedding_size": 1024,
+            "status": "Indexed",
+            "progress": 100.0,
+            "file_path": file_path,
+        }
+    )
     return result
 
 
-@router.delete("/{source_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a knowledge source")
+@router.delete(
+    "/{source_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Delete a knowledge source"
+)
 async def delete_source(
     source_id: str, service: KnowledgeService = Depends(get_knowledge_service)
 ) -> None:

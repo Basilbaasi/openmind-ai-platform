@@ -12,7 +12,9 @@ class MemoryNodeRecord(Base, UUIDMixin, TimestampMixin):
     __tablename__ = "memory_nodes"
 
     label: Mapped[str] = mapped_column(String(255), nullable=False)
-    tier: Mapped[str] = mapped_column(String(50), nullable=False)  # Conversation, Semantic, Long-Term
+    tier: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # Conversation, Semantic, Long-Term
     category: Mapped[str] = mapped_column(String(100), nullable=False, default="")
     value: Mapped[str] = mapped_column(Text, nullable=False, default="")
 

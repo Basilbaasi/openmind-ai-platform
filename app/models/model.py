@@ -1,6 +1,6 @@
 """AI Model registry table."""
 
-from sqlalchemy import Boolean, Float, Integer, String, Text
+from sqlalchemy import Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDMixin

@@ -17,11 +17,7 @@ class LogEntryRepository(BaseRepository[LogEntryRecord]):
     model = LogEntryRecord
 
     async def get_recent(self, limit: int = 100) -> list[LogEntryRecord]:
-        stmt = (
-            select(LogEntryRecord)
-            .order_by(LogEntryRecord.created_at.desc())
-            .limit(limit)
-        )
+        stmt = select(LogEntryRecord).order_by(LogEntryRecord.created_at.desc()).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -30,11 +26,7 @@ class MemoryLogRepository(BaseRepository[MemoryLogRecord]):
     model = MemoryLogRecord
 
     async def get_recent(self, limit: int = 50) -> list[MemoryLogRecord]:
-        stmt = (
-            select(MemoryLogRecord)
-            .order_by(MemoryLogRecord.created_at.desc())
-            .limit(limit)
-        )
+        stmt = select(MemoryLogRecord).order_by(MemoryLogRecord.created_at.desc()).limit(limit)
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

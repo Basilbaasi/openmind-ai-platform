@@ -3,8 +3,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from app.models.model import ModelRecord
 from app.model_adapters.executor import extract_text_from_chunk
+from app.models.model import ModelRecord
 from app.schemas.chat import ChatMessage, ChatRequest, RoleEnum
 from app.services.chat_service import ChatService
 
@@ -21,14 +21,14 @@ def test_stream_parser_excludes_reasoning_and_reads_content():
 async def test_chat_service_generate():
     mock_session = MagicMock()
     service = ChatService(session=mock_session)
-    
+
     dummy_model = ModelRecord(
         id="test-model",
         name="Test Model",
         provider="Cloud",
         type="text",
         adapter_code='response_text = "Mocked Response"',
-        model_api_key="test-key"
+        model_api_key="test-key",
     )
     service.model_service.get_model_record = AsyncMock(return_value=dummy_model)
 
@@ -56,7 +56,7 @@ async def test_chat_service_stream():
         provider="Cloud",
         type="text",
         adapter_code='response_text = "Mocked Response"',
-        model_api_key="test-key"
+        model_api_key="test-key",
     )
     service.model_service.get_model_record = AsyncMock(return_value=dummy_model)
 

@@ -98,6 +98,7 @@ class ChatService:
         Executes the model's adapter code and streams printed chunks in real-time.
         """
         import asyncio
+
         from app.model_adapters.executor import (
             execute_model_adapter_stream,
             extract_text_from_chunk,
@@ -150,13 +151,18 @@ class ChatService:
             return
 
         messages_list = [
-            {"role": msg.role.value if hasattr(msg.role, "value") else msg.role, "content": msg.content}
+            {
+                "role": msg.role.value if hasattr(msg.role, "value") else msg.role,
+                "content": msg.content,
+            }
             for msg in request.messages
         ]
         # Preserve the instruction and recent turns without allowing an
         # unbounded browser history to exceed the provider context window.
         system_messages = [message for message in messages_list if message["role"] == "system"]
-        conversation_messages = [message for message in messages_list if message["role"] != "system"]
+        conversation_messages = [
+            message for message in messages_list if message["role"] != "system"
+        ]
         messages_list = system_messages[-1:] + conversation_messages[-20:]
 
         logger.info(
@@ -278,6 +284,7 @@ class ChatService:
             )
 
         from app.model_adapters.executor import get_model_api_key, get_saved_adapter_code
+
         adapter_code = get_saved_adapter_code(model_record.id) or model_record.adapter_code or ""
         api_key = get_model_api_key(model_record.id) or model_record.model_api_key or ""
 
@@ -289,7 +296,10 @@ class ChatService:
 
         # Build messages list in the format adapters expect
         messages_list = [
-            {"role": msg.role.value if hasattr(msg.role, "value") else msg.role, "content": msg.content}
+            {
+                "role": msg.role.value if hasattr(msg.role, "value") else msg.role,
+                "content": msg.content,
+            }
             for msg in request.messages
         ]
 

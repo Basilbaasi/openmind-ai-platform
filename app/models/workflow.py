@@ -35,7 +35,9 @@ class WorkflowStepRecord(Base, UUIDMixin, TimestampMixin):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    type: Mapped[str] = mapped_column(String(50), nullable=False)  # LLM, Condition, API_Call, Memory_Fetch, Human_Approval
+    type: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # LLM, Condition, API_Call, Memory_Fetch, Human_Approval
     config: Mapped[str] = mapped_column(Text, nullable=False, default="{}")  # JSON string
     order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 

@@ -3,7 +3,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.schemas.models import ModelCreateRequest, ModelListResponse, ModelMetadata, ModelUpdateRequest
+from app.schemas.models import (
+    ModelCreateRequest,
+    ModelListResponse,
+    ModelUpdateRequest,
+)
 from app.services.model_service import ModelService
 
 router = APIRouter()
@@ -38,7 +42,9 @@ async def create_model(
     try:
         result = await service.create_model(data.model_dump())
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
     except IntegrityError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -64,9 +70,13 @@ async def update_model(
     try:
         result = await service.update_model(model_id, data.model_dump(exclude_unset=True))
     except ValueError as exc:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)
+        ) from exc
     if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Model {model_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Model {model_id} not found."
+        )
     return result.model_dump()
 
 
@@ -76,10 +86,10 @@ async def update_model(
     summary="Delete a model",
     description="Removes a model from the platform registry.",
 )
-async def delete_model(
-    model_id: str, service: ModelService = Depends(get_model_service)
-) -> None:
+async def delete_model(model_id: str, service: ModelService = Depends(get_model_service)) -> None:
     """DELETE /models/{model_id} endpoint."""
     success = await service.delete_model(model_id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Model {model_id} not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Model {model_id} not found."
+        )
