@@ -37,6 +37,16 @@ class MessageCreateRequest(BaseModel):
     content: str = Field(..., description="Message text content")
 
 
+class MessageResponse(BaseModel):
+    """Serialized message within a session."""
+
+    id: str
+    session_id: str
+    role: str
+    content: str
+    timestamp: str = ""
+
+
 class SessionResponse(BaseModel):
     """
     Standardized representation of a chat session.
@@ -47,6 +57,7 @@ class SessionResponse(BaseModel):
     created_at: datetime = Field(..., description="Timestamp when the session was created")
     updated_at: datetime = Field(..., description="Timestamp of the last interaction")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Session metadata")
+    messages: list[MessageResponse] = Field(default_factory=list, description="Messages in this session")
 
 
 class SessionListResponse(BaseModel):

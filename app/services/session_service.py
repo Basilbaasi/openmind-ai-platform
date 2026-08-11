@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.session import MessageRecord, SessionRecord
-from app.schemas.sessions import SessionCreateRequest, SessionResponse
+from app.schemas.sessions import SessionCreateRequest, SessionResponse, MessageResponse
 from app.storage.session_repository import MessageRepository, SessionRepository
 
 
@@ -85,6 +85,23 @@ class SessionService:
 
     @staticmethod
     def _to_response(record: SessionRecord) -> SessionResponse:
+        # Build message list from eagerly loaded relationship (if present)
+        messages: list[MessageResponse] = []
+        try:
+            for m in record.messages:
+                messages.append(
+                    MessageResponse(
+                        id=m.id,
+                        session_id=m.session_id,
+                        role=m.role,
+                        content=m.content,
+                        timestamp=m.created_at.isoformat() if m.created_at else "",
+                    )
+                )
+        except Exception:
+            # messages relationship not loaded — leave empty
+            pass
+
         return SessionResponse(
             id=record.id,
             title=record.title,
@@ -98,6 +115,7 @@ class SessionService:
                 "presence_penalty": record.presence_penalty,
                 "json_mode": record.json_mode,
             },
+            messages=messages,
         )
 
 

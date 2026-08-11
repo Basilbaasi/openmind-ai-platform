@@ -112,6 +112,7 @@ class ChatService:
         # write transaction lasts for the whole provider request and blocks
         # later chat requests.  Both messages are stored after [DONE].
         last_user_msg = request.messages[-1] if request.messages else None
+        user_msg_time = datetime.now(UTC)  # capture when the user request arrived
 
         # Look up model record
         model_record = await self.model_service.get_model_record(request.model)
@@ -218,20 +219,50 @@ class ChatService:
         # the final user/assistant pair then cannot delay visible tokens.
         yield "data: [DONE]\n\n"
 
+        assistant_msg_time = datetime.now(UTC)  # capture when the stream completed
+
         # Persist one completed exchange after the stream.  This avoids partial
         # assistant messages and leaves a clean conversation history.
+        #
+        # IMPORTANT: The original request-scoped DB session (from get_db
+        # dependency) is committed and closed by FastAPI *before* the
+        # StreamingResponse generator starts executing.  We must open a
+        # fresh, independent session here so the INSERT + COMMIT actually
+        # reaches PostgreSQL.
+        #
+        # We explicitly set created_at on each message because PostgreSQL's
+        # now() returns the transaction-start time — both INSERTs would get
+        # the same timestamp, causing undefined sort order on reload.
         if request.session_id and full_response_content:
-            if last_user_msg and last_user_msg.role == RoleEnum.user:
-                await self.msg_repo.create(
-                    session_id=request.session_id,
-                    role="user",
-                    content=last_user_msg.content,
-                )
-            await self.msg_repo.create(
-                session_id=request.session_id,
-                role="assistant",
-                content=full_response_content,
-            )
+            from app.core.database import async_session_factory
+            from app.storage.session_repository import MessageRepository as _MsgRepo
+
+            async with async_session_factory() as persist_session:
+                try:
+                    persist_repo = _MsgRepo(persist_session)
+                    if last_user_msg and last_user_msg.role == RoleEnum.user:
+                        await persist_repo.create(
+                            session_id=request.session_id,
+                            role="user",
+                            content=last_user_msg.content,
+                            created_at=user_msg_time,
+                            updated_at=user_msg_time,
+                        )
+                    await persist_repo.create(
+                        session_id=request.session_id,
+                        role="assistant",
+                        content=full_response_content,
+                        created_at=assistant_msg_time,
+                        updated_at=assistant_msg_time,
+                    )
+                    await persist_session.commit()
+                except Exception as exc:
+                    await persist_session.rollback()
+                    logger.error(
+                        "stream_persist_failed",
+                        session_id=request.session_id,
+                        error=str(exc),
+                    )
 
     async def _execute_adapter(self, request: ChatRequest) -> str:
         """
