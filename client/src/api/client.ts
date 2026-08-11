@@ -18,7 +18,7 @@ async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: response.statusText }));
-    throw new Error(error.detail || `HTTP ${response.status}`);
+    throw new Error(error.message || error.detail || `HTTP ${response.status}`);
   }
 
   // 204 No Content
@@ -73,7 +73,8 @@ export async function* streamChat(data: any): AsyncGenerator<string, void, unkno
   });
 
   if (!response.ok) {
-    throw new Error(`Stream failed: ${response.status}`);
+    const error = await response.json().catch(() => ({ detail: response.statusText }));
+    throw new Error(error.message || error.detail || `Stream failed: ${response.status}`);
   }
 
   const reader = response.body?.getReader();

@@ -7,6 +7,7 @@ for the application. Uses asyncpg as the PostgreSQL driver.
 
 from collections.abc import AsyncGenerator
 
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -30,6 +31,17 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     **engine_kwargs,
 )
+
+
+if settings.DATABASE_URL.startswith("sqlite"):
+    @event.listens_for(engine.sync_engine, "connect")
+    def _configure_sqlite_connection(dbapi_connection, _connection_record) -> None:
+        """Allow short concurrent reads/writes without SQLite lock failures."""
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=5000")
+        cursor.close()
 
 async_session_factory = async_sessionmaker(
     engine,

@@ -102,7 +102,7 @@ export default function Sessions({
         <button
           id="create-session-btn"
           onClick={() => {
-            const mId = models[0]?.id || "gemini-3.5-flash";
+            const mId = models[0]?.id || "llama3-8b-instruct";
             onCreateSession(mId);
             onNavigate("playground");
           }}

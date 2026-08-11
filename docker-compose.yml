@@ -38,6 +38,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    profiles: ["tools"]
     restart: unless-stopped
 
   # ── FastAPI Backend ────────────────────────────────────────────
@@ -85,6 +86,26 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: openmind-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_PROXY_TARGET: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3000 || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   pgdata:

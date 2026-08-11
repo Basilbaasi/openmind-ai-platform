@@ -103,7 +103,7 @@ export default function ApiExplorer({
         method === "POST" &&
         (parsedBody as any).messages
       ) {
-        const response = await fetch("/api/chat", {
+        const response = await fetch("/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -127,7 +127,7 @@ export default function ApiExplorer({
                 index: 0,
                 message: {
                   role: "assistant",
-                  content: data.content
+                  content: data.message?.content || data.content || ""
                 },
                 finish_reason: "stop"
               }
@@ -181,7 +181,7 @@ export default function ApiExplorer({
               data: [
                 { id: "llama3-8b-instruct", object: "model", created: 1782342000, owned_by: "meta" },
                 { id: "deepseek-r1-7b", object: "model", created: 1782343000, owned_by: "deepseek" },
-                { id: "gemini-3.5-flash", object: "model", created: 1782344000, owned_by: "google" }
+                { id: "nvidia-ising-1.5-31b", object: "model", created: 1782344000, owned_by: "nvidia" }
               ]
             };
           } else if (url.includes("/embeddings")) {

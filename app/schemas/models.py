@@ -12,6 +12,8 @@ class ModelCreateRequest(BaseModel):
     rpm_limit: int = Field(1000, description="Requests per minute limit")
     status: str = Field("Deployed", description="Status (Deployed, Offline, Syncing)")
     description: str = Field("", description="Detailed model description")
+    adapter_code: str = Field("", description="Python adapter code for executing this model")
+    model_api_key: str = Field("", description="API key for this specific model provider")
 
 
 class ModelUpdateRequest(BaseModel):
@@ -25,6 +27,8 @@ class ModelUpdateRequest(BaseModel):
     rpm_limit: int | None = None
     status: str | None = None
     description: str | None = None
+    adapter_code: str | None = None
+    model_api_key: str | None = None
 
 
 class ModelMetadata(BaseModel):
@@ -59,6 +63,8 @@ class ModelMetadata(BaseModel):
     rpm_limit: int = Field(1000, description="RPM limit")
     status: str = Field("Deployed", description="Status")
     description: str = Field("", description="Description")
+    adapter_code: str = Field("", description="Python adapter code for this model")
+    model_api_key_masked: str = Field("", description="Masked API key (e.g., '••••ab12')")
 
 
 class ModelListResponse(BaseModel):
@@ -68,3 +74,4 @@ class ModelListResponse(BaseModel):
 
     models: list[ModelMetadata] = Field(..., description="List of available models")
     total: int = Field(..., description="Total number of available models")
+

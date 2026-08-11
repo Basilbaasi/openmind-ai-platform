@@ -26,6 +26,9 @@ export interface Model {
   rpmLimit: number;
   status: "Deployed" | "Offline" | "Syncing";
   description: string;
+  adapterCode?: string;        // Python adapter code for this model's provider
+  modelApiKey?: string;        // API key for this specific model (stored per-model)
+  modelApiKeyMasked?: string;  // Masked API key display from server
 }
 
 export interface Message {

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -34,7 +35,20 @@ async def create_model(
     data: ModelCreateRequest, service: ModelService = Depends(get_model_service)
 ) -> dict:
     """POST /models endpoint."""
-    result = await service.create_model(data.model_dump())
+    try:
+        result = await service.create_model(data.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+    except IntegrityError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"A model with ID '{data.id}' already exists.",
+        ) from exc
+    except OSError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="The model record could not be deployed because its adapter file could not be saved.",
+        ) from exc
     return result.model_dump()
 
 
@@ -47,7 +61,10 @@ async def update_model(
     model_id: str, data: ModelUpdateRequest, service: ModelService = Depends(get_model_service)
 ) -> dict:
     """PUT /models/{model_id} endpoint."""
-    result = await service.update_model(model_id, data.model_dump(exclude_unset=True))
+    try:
+        result = await service.update_model(model_id, data.model_dump(exclude_unset=True))
+    except ValueError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Model {model_id} not found.")
     return result.model_dump()

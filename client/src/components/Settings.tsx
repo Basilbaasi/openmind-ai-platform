@@ -365,7 +365,7 @@ export default function SettingsComponent({
                   <div className="space-y-1">
                     <span className="text-sm font-semibold text-gray-200 block">Cloud API Proxy Gateway</span>
                     <span className="text-xs text-gray-400 leading-normal block max-w-md">
-                      Enables multi-turn external fallback queries to Google Gemini 3.5 or OpenAI services.
+                      Enables multi-turn external fallback queries to configured cloud model providers.
                     </span>
                   </div>
                   <button

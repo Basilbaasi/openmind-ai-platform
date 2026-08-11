@@ -1,11 +1,19 @@
+"""
+Chat service — Generic model adapter execution.
+
+Routes chat requests through per-model Python adapter code.
+Each model has its own execution code with standardized variable names.
+No hardcoded provider (Gemini, OpenAI, etc.) — all models go through adapters.
+"""
+
 import uuid
 from collections.abc import AsyncGenerator
 from datetime import UTC, datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.model_adapters.executor import execute_model_adapter
 from app.schemas.chat import (
     ChatMessage,
     ChatRequest,
@@ -14,6 +22,7 @@ from app.schemas.chat import (
     RoleEnum,
     TokenUsage,
 )
+from app.services.model_service import ModelService
 from app.storage.session_repository import MessageRepository
 
 logger = get_logger(__name__)
@@ -21,27 +30,21 @@ logger = get_logger(__name__)
 
 class ChatService:
     """
-    Service responsible for handling chat completions and streaming.
-    Integrates with Google Gemini for real AI responses.
-    Falls back to mock responses if GEMINI_API_KEY is not set.
+    Service responsible for handling chat completions.
+    Routes requests through per-model adapter code — no hardcoded providers.
     """
 
     def __init__(self, session: AsyncSession) -> None:
         self.db_session = session
         self.msg_repo = MessageRepository(session)
-        self.settings = get_settings()
-
-    def _get_gemini_model_name(self, model_id: str) -> str:
-        if model_id and "gemini" in model_id.lower():
-            return model_id
-        return "gemini-2.0-flash"
+        self.model_service = ModelService(session)
 
     def _estimate_tokens(self, text: str) -> int:
         return int(len(text.split()) * 1.3)
 
     async def generate_response(self, request: ChatRequest) -> ChatResponse:
         """
-        Generates a chat response, using Gemini if configured.
+        Generates a chat response by executing the model's adapter code.
         Persists messages to the database if a session_id is provided.
         """
         response_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
@@ -57,8 +60,18 @@ class ChatService:
                     content=last_user_msg.content,
                 )
 
-        # Try Gemini, fall back to mock
-        content, usage = await self._call_gemini(request)
+        # Look up the model's adapter code and API key from the DB
+        content = await self._execute_adapter(request)
+
+        # Calculate token usage estimate
+        prompt_text = " ".join([m.content for m in request.messages])
+        prompt_tokens = self._estimate_tokens(prompt_text)
+        comp_tokens = self._estimate_tokens(content)
+        usage = TokenUsage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=comp_tokens,
+            total_tokens=prompt_tokens + comp_tokens,
+        )
 
         # Persist assistant response if session is provided
         if request.session_id:
@@ -82,174 +95,192 @@ class ChatService:
     async def stream_response(self, request: ChatRequest) -> AsyncGenerator[str, None]:
         """
         Streams a chat response via SSE.
-        Uses Gemini streaming if configured, otherwise mock chunks.
+        Executes the model's adapter code and streams printed chunks in real-time.
         """
+        import asyncio
+        from app.model_adapters.executor import (
+            execute_model_adapter_stream,
+            extract_text_from_chunk,
+            get_model_api_key,
+            get_saved_adapter_code,
+        )
+
         response_id = f"chatcmpl-{uuid.uuid4().hex[:12]}"
         created = int(datetime.now(UTC).timestamp())
-        target_model = self._get_gemini_model_name(request.model)
 
-        # Persist user message
-        if request.session_id:
-            last_user_msg = request.messages[-1] if request.messages else None
+        # Do not write before or during a stream.  With SQLite, an uncommitted
+        # write transaction lasts for the whole provider request and blocks
+        # later chat requests.  Both messages are stored after [DONE].
+        last_user_msg = request.messages[-1] if request.messages else None
+
+        # Look up model record
+        model_record = await self.model_service.get_model_record(request.model)
+        if model_record is None:
+            stream_chunk = ChatStreamResponse(
+                id=response_id,
+                object="chat.completion.chunk",
+                created=created,
+                model=request.model,
+                chunk=f"Error: Model '{request.model}' not found in the registry.",
+                finish_reason="stop",
+                session_id=request.session_id,
+            )
+            yield f"data: {stream_chunk.model_dump_json(exclude_none=True)}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
+        # The saved file is the deployed adapter.  Fall back to the database
+        # record for legacy models that predate adapter-file persistence.
+        adapter_code = get_saved_adapter_code(model_record.id) or model_record.adapter_code or ""
+        api_key = get_model_api_key(model_record.id) or model_record.model_api_key or ""
+
+        if not adapter_code.strip():
+            stream_chunk = ChatStreamResponse(
+                id=response_id,
+                object="chat.completion.chunk",
+                created=created,
+                model=request.model,
+                chunk=f"Error: Model '{model_record.name}' has no adapter code configured.",
+                finish_reason="stop",
+                session_id=request.session_id,
+            )
+            yield f"data: {stream_chunk.model_dump_json(exclude_none=True)}\n\n"
+            yield "data: [DONE]\n\n"
+            return
+
+        messages_list = [
+            {"role": msg.role.value if hasattr(msg.role, "value") else msg.role, "content": msg.content}
+            for msg in request.messages
+        ]
+        # Preserve the instruction and recent turns without allowing an
+        # unbounded browser history to exceed the provider context window.
+        system_messages = [message for message in messages_list if message["role"] == "system"]
+        conversation_messages = [message for message in messages_list if message["role"] != "system"]
+        messages_list = system_messages[-1:] + conversation_messages[-20:]
+
+        logger.info(
+            "streaming_adapter_execution",
+            model_id=request.model,
+            model_name=model_record.name,
+            message_count=len(messages_list),
+        )
+
+        # Run stream executor
+        generator = execute_model_adapter_stream(
+            adapter_code=adapter_code,
+            api_key=api_key,
+            messages=messages_list,
+            temperature=request.temperature,
+            max_tokens=request.max_tokens or 1024,
+            top_p=request.top_p,
+        )
+
+        full_response_content = ""
+        # The adapter uses blocking requests in a worker thread. Consume its
+        # queue-backed iterator away from the event loop so each event can be
+        # promptly flushed as SSE.
+        while True:
+            raw_chunk = await asyncio.to_thread(next, generator, None)
+            if raw_chunk is None:
+                break
+
+            text_delta = extract_text_from_chunk(raw_chunk)
+            if not text_delta:
+                continue
+
+            full_response_content += text_delta
+
+            stream_chunk = ChatStreamResponse(
+                id=response_id,
+                object="chat.completion.chunk",
+                created=created,
+                model=request.model,
+                chunk=text_delta,
+                finish_reason=None,
+                session_id=request.session_id,
+            )
+            yield f"data: {stream_chunk.model_dump_json(exclude_none=True)}\n\n"
+            await asyncio.sleep(0.005)
+
+        # Send final chunk with stop finish reason
+        stream_chunk = ChatStreamResponse(
+            id=response_id,
+            object="chat.completion.chunk",
+            created=created,
+            model=request.model,
+            chunk="",
+            finish_reason="stop",
+            session_id=request.session_id,
+        )
+        yield f"data: {stream_chunk.model_dump_json(exclude_none=True)}\n\n"
+
+        # Mark the client stream complete before doing database work.  Saving
+        # the final user/assistant pair then cannot delay visible tokens.
+        yield "data: [DONE]\n\n"
+
+        # Persist one completed exchange after the stream.  This avoids partial
+        # assistant messages and leaves a clean conversation history.
+        if request.session_id and full_response_content:
             if last_user_msg and last_user_msg.role == RoleEnum.user:
                 await self.msg_repo.create(
                     session_id=request.session_id,
                     role="user",
                     content=last_user_msg.content,
                 )
-
-        full_response = ""
-
-        if self.settings.GEMINI_API_KEY:
-            try:
-                import google.generativeai as genai
-
-                genai.configure(api_key=self.settings.GEMINI_API_KEY)
-                model = genai.GenerativeModel(target_model)
-
-                # Build message history for Gemini
-                contents = []
-                system_instruction = None
-                for msg in request.messages:
-                    if msg.role == RoleEnum.system:
-                        system_instruction = msg.content
-                    elif msg.role == RoleEnum.user:
-                        contents.append({"role": "user", "parts": [msg.content]})
-                    elif msg.role == RoleEnum.assistant:
-                        contents.append({"role": "model", "parts": [msg.content]})
-
-                if system_instruction:
-                    model = genai.GenerativeModel(
-                        target_model,
-                        system_instruction=system_instruction,
-                    )
-
-                response = model.generate_content(
-                    contents,
-                    generation_config=genai.types.GenerationConfig(
-                        temperature=request.temperature,
-                        max_output_tokens=request.max_tokens,
-                    ),
-                    stream=True,
-                )
-
-                for chunk in response:
-                    if chunk.text:
-                        full_response += chunk.text
-                        stream_chunk = ChatStreamResponse(
-                            id=response_id,
-                            object="chat.completion.chunk",
-                            created=created,
-                            model=request.model,
-                            chunk=chunk.text,
-                            finish_reason=None,
-                            session_id=request.session_id,
-                        )
-                        yield f"data: {stream_chunk.model_dump_json(exclude_none=True)}\n\n"
-
-            except Exception as e:
-                logger.error("gemini_stream_error", error=str(e))
-                error_chunk = ChatStreamResponse(
-                    id=response_id,
-                    object="chat.completion.chunk",
-                    created=created,
-                    model=request.model,
-                    chunk=f"Error: {e!s}",
-                    finish_reason="error",
-                    session_id=request.session_id,
-                )
-                yield f"data: {error_chunk.model_dump_json(exclude_none=True)}\n\n"
-                full_response = f"Error: {e!s}"
-        else:
-            # Mock streaming fallback
-            import asyncio
-
-            mock_text = "This is a response from the OpenMind AI Platform. Configure your GEMINI_API_KEY in .env to enable real AI responses."
-            words = mock_text.split(" ")
-            for i, word in enumerate(words):
-                chunk_text = word + (" " if i < len(words) - 1 else "")
-                full_response += chunk_text
-                await asyncio.sleep(0.05)
-                stream_chunk = ChatStreamResponse(
-                    id=response_id,
-                    object="chat.completion.chunk",
-                    created=created,
-                    model=request.model,
-                    chunk=chunk_text,
-                    finish_reason=None if i < len(words) - 1 else "stop",
-                    session_id=request.session_id,
-                )
-                yield f"data: {stream_chunk.model_dump_json(exclude_none=True)}\n\n"
-
-        # Persist assistant response
-        if request.session_id and full_response:
             await self.msg_repo.create(
                 session_id=request.session_id,
                 role="assistant",
-                content=full_response,
+                content=full_response_content,
             )
 
-        yield "data: [DONE]\n\n"
+    async def _execute_adapter(self, request: ChatRequest) -> str:
+        """
+        Look up the model's adapter code and API key, then execute.
+        """
+        model_record = await self.model_service.get_model_record(request.model)
 
-    async def _call_gemini(self, request: ChatRequest) -> tuple[str, TokenUsage]:
-        """Call Gemini API for a non-streaming response."""
-        target_model = self._get_gemini_model_name(request.model)
-        prompt_text = " ".join([m.content for m in request.messages])
-
-        if not self.settings.GEMINI_API_KEY:
-            res_text = "This is a response from the OpenMind AI Platform. Configure your GEMINI_API_KEY in .env to enable real AI responses."
-            prompt_tokens = self._estimate_tokens(prompt_text)
-            comp_tokens = self._estimate_tokens(res_text)
-            return res_text, TokenUsage(
-                prompt_tokens=prompt_tokens,
-                completion_tokens=comp_tokens,
-                total_tokens=prompt_tokens + comp_tokens,
+        if model_record is None:
+            logger.warning("model_not_found", model_id=request.model)
+            return (
+                f"Error: Model '{request.model}' not found in the registry. "
+                "Please add the model with its adapter code via the Models page."
             )
 
+        from app.model_adapters.executor import get_model_api_key, get_saved_adapter_code
+        adapter_code = get_saved_adapter_code(model_record.id) or model_record.adapter_code or ""
+        api_key = get_model_api_key(model_record.id) or model_record.model_api_key or ""
+
+        if not adapter_code.strip():
+            return (
+                f"Error: Model '{model_record.name}' has no adapter code configured. "
+                "Please add provider code in the model settings."
+            )
+
+        # Build messages list in the format adapters expect
+        messages_list = [
+            {"role": msg.role.value if hasattr(msg.role, "value") else msg.role, "content": msg.content}
+            for msg in request.messages
+        ]
+
+        logger.info(
+            "executing_adapter",
+            model_id=request.model,
+            model_name=model_record.name,
+            message_count=len(messages_list),
+        )
+
+        # Execute the adapter code with injected variables
         try:
-            import google.generativeai as genai
-
-            genai.configure(api_key=self.settings.GEMINI_API_KEY)
-
-            system_instruction = None
-            contents = []
-            for msg in request.messages:
-                if msg.role == RoleEnum.system:
-                    system_instruction = msg.content
-                elif msg.role == RoleEnum.user:
-                    contents.append({"role": "user", "parts": [msg.content]})
-                elif msg.role == RoleEnum.assistant:
-                    contents.append({"role": "model", "parts": [msg.content]})
-
-            model = genai.GenerativeModel(
-                target_model,
-                system_instruction=system_instruction,
+            content = execute_model_adapter(
+                adapter_code=adapter_code,
+                api_key=api_key,
+                messages=messages_list,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens or 1024,
+                top_p=request.top_p,
             )
-
-            response = model.generate_content(
-                contents,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=request.temperature,
-                    max_output_tokens=request.max_tokens,
-                ),
-            )
-            text = response.text or "No response received."
-            prompt_tokens = self._estimate_tokens(prompt_text)
-            comp_tokens = self._estimate_tokens(text)
-            if hasattr(response, "usage_metadata") and response.usage_metadata:
-                prompt_tokens = getattr(response.usage_metadata, "prompt_token_count", prompt_tokens)
-                comp_tokens = getattr(response.usage_metadata, "candidates_token_count", comp_tokens)
-
-            return text, TokenUsage(
-                prompt_tokens=prompt_tokens,
-                completion_tokens=comp_tokens,
-                total_tokens=prompt_tokens + comp_tokens,
-            )
-
         except Exception as e:
-            logger.error("gemini_api_error", error=str(e))
-            err_text = f"Error communicating with Gemini: {e!s}"
-            return err_text, TokenUsage(prompt_tokens=0, completion_tokens=0, total_tokens=0)
+            logger.error("adapter_execution_error", error=str(e), model_id=request.model)
+            content = f"Error executing adapter for model '{model_record.name}': {e!s}"
 
-
-
+        return content

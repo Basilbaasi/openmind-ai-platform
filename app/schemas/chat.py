@@ -31,6 +31,7 @@ class ChatRequest(BaseModel):
     )
     temperature: float = Field(0.7, ge=0.0, le=2.0, description="Sampling temperature")
     max_tokens: int | None = Field(None, description="Maximum number of tokens to generate")
+    top_p: float = Field(0.95, ge=0.0, le=1.0, description="Nucleus sampling probability")
 
 
 class ChatResponse(BaseModel):

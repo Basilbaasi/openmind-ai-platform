@@ -36,19 +36,6 @@ import {
 } from "./types";
 
 // Mock Data
-import {
-  initialSystemStatus,
-  initialModels,
-  initialSessions,
-  initialApiLogs,
-  initialMemoryNodes,
-  initialMemoryLogs,
-  initialSources,
-  initialWorkflows,
-  initialBenchmarks,
-  initialLogs,
-  initialSettings
-} from "./data";
 
 // Components
 import Dashboard from "./components/Dashboard";
@@ -76,64 +63,50 @@ import {
   benchmarksApi
 } from "./api/client";
 
+const modelFromApi = (model: any): Model => ({
+  id: model.id,
+  name: model.name,
+  provider: model.provider,
+  type: model.type,
+  contextWindow: model.max_context_length ?? model.context_window ?? 8192,
+  parameters: model.parameters ?? "",
+  latencyMs: model.latency_ms ?? 0,
+  vramRequiredGb: model.vram_required_gb ?? 0,
+  rpmLimit: model.rpm_limit ?? 1000,
+  status: model.status ?? "Offline",
+  description: model.description ?? "",
+  adapterCode: model.adapter_code ?? "",
+  modelApiKeyMasked: model.model_api_key_masked ?? "",
+});
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Core App states persisted across session
-  const [systemStatus, setSystemStatus] = useState<SystemStatus>(initialSystemStatus);
-  const [models, setModels] = useState<Model[]>(() => {
-    const saved = localStorage.getItem("om_models");
-    return saved ? JSON.parse(saved) : initialModels;
-  });
-  const [sessions, setSessions] = useState<PlaygroundSession[]>(() => {
-    const saved = localStorage.getItem("om_sessions");
-    return saved ? JSON.parse(saved) : initialSessions;
-  });
-  const [activeSessionId, setActiveSessionId] = useState<string>(() => {
-    const saved = localStorage.getItem("om_active_session");
-    return saved || initialSessions[0]?.id || "";
-  });
-  const [apiLogs, setApiLogs] = useState<ApiRequestLog[]>(() => {
-    const saved = localStorage.getItem("om_api_logs");
-    return saved ? JSON.parse(saved) : initialApiLogs;
-  });
-  const [memoryNodes, setMemoryNodes] = useState<MemoryNode[]>(() => {
-    const saved = localStorage.getItem("om_memory_nodes");
-    return saved ? JSON.parse(saved) : initialMemoryNodes;
-  });
-  const [memoryLogs, setMemoryLogs] = useState<MemoryLog[]>(() => {
-    const saved = localStorage.getItem("om_memory_logs");
-    return saved ? JSON.parse(saved) : initialMemoryLogs;
-  });
-  const [sources, setSources] = useState<IngestedSource[]>(() => {
-    const saved = localStorage.getItem("om_sources");
-    return saved ? JSON.parse(saved) : initialSources;
-  });
-  const [workflows, setWorkflows] = useState<Workflow[]>(() => {
-    const saved = localStorage.getItem("om_workflows");
-    return saved ? JSON.parse(saved) : initialWorkflows;
-  });
-  const [benchmarks, setBenchmarks] = useState<BenchmarkResult[]>(() => {
-    const saved = localStorage.getItem("om_benchmarks");
-    return saved ? JSON.parse(saved) : initialBenchmarks;
-  });
-  const [logs, setLogs] = useState<LogEntry[]>(() => {
-    const saved = localStorage.getItem("om_logs");
-    return saved ? JSON.parse(saved) : initialLogs;
-  });
-  const [settings, setSettings] = useState<SystemSettings>(() => {
-    const saved = localStorage.getItem("om_settings");
-    return saved ? JSON.parse(saved) : initialSettings;
-  });
+  const [systemStatus, setSystemStatus] = useState<SystemStatus>({ health: "Degraded", uptime: "", version: "", cpuUsage: 0, gpuUsage: 0, vramTotal: 0, vramUsed: 0, ramTotal: 0, ramUsed: 0 });
+  const [models, setModels] = useState<Model[]>([]);
+  const [sessions, setSessions] = useState<PlaygroundSession[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<string>("");
+  const [apiLogs, setApiLogs] = useState<ApiRequestLog[]>([]);
+  const [memoryNodes, setMemoryNodes] = useState<MemoryNode[]>([]);
+  const [memoryLogs, setMemoryLogs] = useState<MemoryLog[]>([]);
+  const [sources, setSources] = useState<IngestedSource[]>([]);
+  const [workflows, setWorkflows] = useState<Workflow[]>([]);
+  const [benchmarks, setBenchmarks] = useState<BenchmarkResult[]>([]);
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [settings, setSettings] = useState<SystemSettings>({ generalName: "", generalDesc: "", githubUrl: "", fallbackModelId: "", sessionTimeoutMin: 0, apiKeys: [], activeProviders: [], theme: "Sophisticated Dark" });
 
   // Load data from backend API on mount
   useEffect(() => {
     async function loadBackendData() {
       try {
         const mRes = await modelsApi.list();
-        if (mRes && Array.isArray(mRes.models) && mRes.models.length > 0) {
-          setModels(mRes.models);
+        if (mRes && Array.isArray(mRes.models)) {
+          // The API is authoritative. In particular, a new PostgreSQL
+          // database correctly returns an empty registry rather than reviving
+          // stale model IDs from localStorage.
+          setModels(mRes.models.map(modelFromApi));
         }
       } catch (e) {
         console.log("Backend models load fallback to local", e);
@@ -141,7 +114,7 @@ export default function App() {
 
       try {
         const sRes = await sessionsApi.list();
-        if (sRes && Array.isArray(sRes.sessions) && sRes.sessions.length > 0) {
+        if (sRes && Array.isArray(sRes.sessions)) {
           const normalized = await Promise.all(
             sRes.sessions.map(async (s: any) => {
               let msgs = s.messages;
@@ -174,6 +147,11 @@ export default function App() {
             })
           );
           setSessions(normalized);
+          setActiveSessionId((currentId) =>
+            normalized.some((session) => session.id === currentId)
+              ? currentId
+              : normalized[0]?.id || ""
+          );
         }
       } catch (e) {
         console.log("Backend sessions load fallback to local", e);
@@ -287,42 +265,89 @@ export default function App() {
   }, [settings]);
 
   // Handle addition, editing, and deletion across states
-  const handleAddModel = (newModel: Model) => {
-    setModels([newModel, ...models]);
-    // Log deployment
-    handleAddLogEntry("MODEL_INFRA", `Successfully loaded and partition-mapped model: ${newModel.name}`, "INFO");
+  const handleAddModel = async (newModel: Model) => {
+    try {
+      const created = await modelsApi.create({
+        id: newModel.id,
+        name: newModel.name,
+        provider: newModel.provider,
+        type: newModel.type,
+        context_window: newModel.contextWindow,
+        parameters: newModel.parameters,
+        latency_ms: newModel.latencyMs,
+        vram_required_gb: newModel.vramRequiredGb,
+        rpm_limit: newModel.rpmLimit,
+        status: newModel.status,
+        description: newModel.description,
+        adapter_code: newModel.adapterCode || "",
+        model_api_key: newModel.modelApiKey || ""
+      });
+      const savedModel = modelFromApi(created);
+      setModels((current) => [savedModel, ...current]);
+      handleAddLogEntry("MODEL_INFRA", `Successfully loaded and registered model: ${newModel.name}`, "INFO");
+    } catch (err: any) {
+      console.error("Failed to add model to backend", err);
+      handleAddLogEntry("MODEL_INFRA", `Failed to add model to backend: ${err.message}`, "ERROR");
+      throw err;
+    }
+
     // Append to benchmarks comparison
-    setBenchmarks([
-      ...benchmarks,
-      {
-        modelId: newModel.id,
-        modelName: newModel.name,
-        ttftMs: 40,
-        tps: 60,
-        latencyMs: newModel.latencyMs,
-        accuracy: 85,
-        vramGb: newModel.vramRequiredGb,
-        costPer1k: 0
-      }
-    ]);
   };
 
-  const handleUpdateModel = (updatedModel: Model) => {
-    setModels(models.map((m) => (m.id === updatedModel.id ? updatedModel : m)));
-    handleAddLogEntry("MODEL_INFRA", `Re-allocated weights and parameters for: ${updatedModel.name}`, "INFO");
-  };
-
-  const handleDeleteModel = (id: string) => {
-    const target = models.find((m) => m.id === id);
-    setModels(models.filter((m) => m.id !== id));
-    setBenchmarks(benchmarks.filter((b) => b.modelId !== id));
-    if (target) {
-      handleAddLogEntry("MODEL_INFRA", `Deallocated VRAM and tore down model partition: ${target.name}`, "WARN");
+  const handleUpdateModel = async (updatedModel: Model) => {
+    try {
+      const updated = await modelsApi.update(updatedModel.id, {
+        name: updatedModel.name,
+        provider: updatedModel.provider,
+        type: updatedModel.type,
+        context_window: updatedModel.contextWindow,
+        parameters: updatedModel.parameters,
+        latency_ms: updatedModel.latencyMs,
+        vram_required_gb: updatedModel.vramRequiredGb,
+        rpm_limit: updatedModel.rpmLimit,
+        status: updatedModel.status,
+        description: updatedModel.description,
+        adapter_code: updatedModel.adapterCode || "",
+        ...(updatedModel.modelApiKey ? { model_api_key: updatedModel.modelApiKey } : {})
+      });
+      const savedModel = modelFromApi(updated);
+      setModels((current) => current.map((model) => model.id === savedModel.id ? savedModel : model));
+      handleAddLogEntry("MODEL_INFRA", `Re-allocated weights and parameters for: ${updatedModel.name}`, "INFO");
+    } catch (err: any) {
+      console.error("Failed to update model on backend", err);
+      handleAddLogEntry("MODEL_INFRA", `Failed to update model on backend: ${err.message}`, "ERROR");
+      throw err;
     }
   };
 
-  const handleCreateSession = (modelId: string) => {
-    const newId = "sess_" + Date.now();
+  const handleDeleteModel = async (id: string) => {
+    const target = models.find((m) => m.id === id);
+    if (target) {
+      try {
+        await modelsApi.delete(id);
+        setModels((current) => current.filter((model) => model.id !== id));
+        setBenchmarks((current) => current.filter((benchmark) => benchmark.modelId !== id));
+        handleAddLogEntry("MODEL_INFRA", `Deallocated VRAM and tore down model partition: ${target.name}`, "WARN");
+      } catch (err: any) {
+        console.error("Failed to delete model from backend", err);
+        handleAddLogEntry("MODEL_INFRA", `Failed to delete model from backend: ${err.message}`, "ERROR");
+      }
+    }
+  };
+
+  const handleCreateSession = async (modelId: string) => {
+    const targetModel = models.find((model) => model.id === modelId);
+    if (!targetModel) return;
+    const backendSession = await sessionsApi.create({
+      title: "New Workspace",
+      model_id: modelId,
+      temperature: 0.7,
+      max_tokens: 1024,
+      top_p: 0.9,
+      presence_penalty: 0.1,
+      json_mode: false,
+    });
+    const newId = backendSession.id;
     const newSess: PlaygroundSession = {
       id: newId,
       title: "Workspace Session #" + (sessions.length + 1),
@@ -342,18 +367,20 @@ export default function App() {
         }
       ]
     };
-    setSessions([newSess, ...sessions]);
+    await sessionsApi.addMessage(newId, { role: "system", content: newSess.messages[0].content });
+    setSessions((current) => [newSess, ...current]);
     setActiveSessionId(newId);
+
     handleAddLogEntry("CORE_VM", `Created new playground workspace state: '${newSess.title}'`, "INFO");
   };
 
-  const handleDeleteSession = (id: string) => {
+  const handleDeleteSession = async (id: string) => {
     const target = sessions.find((s) => s.id === id);
-    const updated = sessions.filter((s) => s.id !== id);
+    await sessionsApi.delete(id);
+    const updated = sessions.filter((session) => session.id !== id);
     setSessions(updated);
-    if (id === activeSessionId && updated.length > 0) {
-      setActiveSessionId(updated[0].id);
-    }
+    setActiveSessionId(id === activeSessionId ? updated[0]?.id || "" : activeSessionId);
+
     if (target) {
       handleAddLogEntry("CORE_VM", `Purged workspace conversation history: '${target.title}'`, "WARN");
     }

@@ -50,10 +50,12 @@ async def seed_models(session: AsyncSession) -> None:
             description="State-of-the-art reasoning model optimized for math, logic, and multi-step complex code generation.",
         ),
         ModelRecord(
-            id="gemini-3.5-flash", name="Gemini 3.5 Flash", provider="Cloud",
-            type="text", context_window=1048576, parameters="MoE", latency_ms=45,
-            vram_required_gb=0, rpm_limit=2000, status="Deployed",
-            description="Google's lightweight, fast, and cost-efficient multimodal model with an industry-leading 1M token context window.",
+            id="nvidia-ising-1.5-31b", name="NVIDIA Ising Calibration 1.5 31B", provider="Cloud",
+            type="text", context_window=32768, parameters="31B", latency_ms=85,
+            vram_required_gb=0, rpm_limit=1000, status="Deployed",
+            description="NVIDIA's Ising Calibration 1.5 31B model via NVIDIA API. Pre-configured adapter code with standardized variable naming.",
+            adapter_code='import requests\n\ninvoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"\n\nheaders = {\n    "Authorization": f"Bearer {api_key}",\n    "Accept": "application/json",\n}\n\npayload = {\n    "model": "nvidia/ising-calibration-1.5-31b",\n    "messages": messages,\n    "max_tokens": max_tokens,\n    "temperature": temperature,\n    "top_p": top_p,\n    "stream": False,\n}\n\nresp = requests.post(invoke_url, headers=headers, json=payload)\ndata = resp.json()\n\nif "choices" in data and len(data["choices"]) > 0:\n    response_text = data["choices"][0]["message"]["content"]\nelif "error" in data:\n    response_text = f"API Error: {data[\'error\'].get(\'message\', str(data[\'error\']))}"\nelse:\n    response_text = f"Unexpected response format: {json.dumps(data)}"',
+            model_api_key="",
         ),
         ModelRecord(
             id="gpt-4o", name="GPT-4o", provider="Cloud",
@@ -86,7 +88,7 @@ async def seed_sessions(session: AsyncSession) -> None:
         temperature=0.2, max_tokens=1024, top_p=0.9, presence_penalty=0.1, json_mode=False,
     )
     sess2 = SessionRecord(
-        id="sess_2", title="Customer Support Classifier", model_id="gemini-3.5-flash",
+        id="sess_2", title="Customer Support Classifier", model_id="llama3-8b-instruct",
         temperature=0.1, max_tokens=256, top_p=0.95, presence_penalty=0.0, json_mode=True,
     )
     await session.merge(sess1)
@@ -170,7 +172,7 @@ async def seed_workflows(session: AsyncSession) -> None:
     steps = [
         WorkflowStepRecord(id="s1_1", workflow_id="wf_1", name="Parse Error Context", type="Condition", config=json.dumps({"regex": "(?i)exception|error"}), order=0),
         WorkflowStepRecord(id="s1_2", workflow_id="wf_1", name="Query Semantic Memory", type="Memory_Fetch", config=json.dumps({"lookup_tier": "Semantic", "threshold": 0.75}), order=1),
-        WorkflowStepRecord(id="s1_3", workflow_id="wf_1", name="Generate Solution Proposal", type="LLM", config=json.dumps({"model": "gemini-3.5-flash", "temperature": 0.1}), order=2),
+        WorkflowStepRecord(id="s1_3", workflow_id="wf_1", name="Generate Solution Proposal", type="LLM", config=json.dumps({"model": "llama3-8b-instruct", "temperature": 0.1}), order=2),
         WorkflowStepRecord(id="s1_4", workflow_id="wf_1", name="Request Engineer Approval", type="Human_Approval", config=json.dumps({"notification": "slack"}), order=3),
         WorkflowStepRecord(id="s2_1", workflow_id="wf_2", name="Fetch Fresh Records", type="API_Call", config=json.dumps({"endpoint": "https://db.internal/v1/sync"}), order=0),
         WorkflowStepRecord(id="s2_2", workflow_id="wf_2", name="Batch Categorize", type="LLM", config=json.dumps({"model": "gpt-4o", "batch_size": 50}), order=1),
@@ -188,7 +190,7 @@ async def seed_benchmarks(session: AsyncSession) -> None:
     benchmarks = [
         BenchmarkRecord(model_id="llama3-8b-instruct", model_name="Llama 3 8B Instruct", ttft_ms=28, tps=84.5, latency_ms=35, accuracy=82.4, vram_gb=6.5, cost_per_1k=0.0),
         BenchmarkRecord(model_id="deepseek-r1-7b", model_name="DeepSeek R1 7B", ttft_ms=140, tps=42.1, latency_ms=95, accuracy=89.1, vram_gb=5.8, cost_per_1k=0.0),
-        BenchmarkRecord(model_id="gemini-3.5-flash", model_name="Gemini 3.5 Flash", ttft_ms=45, tps=110.2, latency_ms=45, accuracy=91.5, vram_gb=0.0, cost_per_1k=0.000075),
+        BenchmarkRecord(model_id="nvidia-ising-1.5-31b", model_name="NVIDIA Ising 1.5 31B", ttft_ms=80, tps=55.0, latency_ms=85, accuracy=90.2, vram_gb=0.0, cost_per_1k=0.001),
         BenchmarkRecord(model_id="gpt-4o", model_name="GPT-4o", ttft_ms=90, tps=78.4, latency_ms=120, accuracy=94.8, vram_gb=0.0, cost_per_1k=0.0025),
     ]
     for bm in benchmarks:
@@ -217,7 +219,7 @@ async def seed_settings(session: AsyncSession) -> None:
         "generalName": "OpenMind AI Platform",
         "generalDesc": "High-performance AI model routing gateway, playground workspace, agent workflows manager, and local embedding retrieval core.",
         "githubUrl": "https://github.com/openmind-org/openmind-console",
-        "fallbackModelId": "gemini-3.5-flash",
+        "fallbackModelId": "llama3-8b-instruct",
         "sessionTimeoutMin": "60",
         "activeProviders": json.dumps(["Local", "Cloud"]),
         "theme": "Sophisticated Dark",

@@ -41,7 +41,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./openmind.db"
 
     # ── AI / LLM ─────────────────────────────────────────────────────
-    GEMINI_API_KEY: str = ""
+    # API keys are now stored per-model in the database.
+    # No global LLM key needed.
 
     # ── File Storage ─────────────────────────────────────────────────
     UPLOAD_DIR: str = "./uploads"

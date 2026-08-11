@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Send,
@@ -13,6 +13,7 @@ import {
   HelpCircle
 } from "lucide-react";
 import { Model, PlaygroundSession, Message } from "../types";
+import { streamChat } from "../api/client";
 
 interface PlaygroundProps {
   sessions: PlaygroundSession[];
@@ -48,6 +49,12 @@ export default function Playground({
   const activeSession =
     sessions.find((s) => s.id === activeSessionId) || sessions[0];
 
+  const activeModelId = activeSession
+    ? (models.some((m) => m.id === activeSession.modelId)
+      ? activeSession.modelId
+      : (models[0]?.id || ""))
+    : "";
+
   const [input, setInput] = useState("");
   const [systemPrompt, setSystemPrompt] = useState(
     (activeSession?.messages || []).find((m) => m.role === "system")?.content ||
@@ -57,20 +64,50 @@ export default function Playground({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showThinking, setShowThinking] = useState(false);
   const [thinkingProcess, setThinkingProcess] = useState<string>("");
+  const chatFeedRef = useRef<HTMLDivElement>(null);
+  const [autoFollow, setAutoFollow] = useState(true);
+
+  const lastMessageContent = activeSession && activeSession.messages.length > 0
+    ? activeSession.messages[activeSession.messages.length - 1].content
+    : "";
+
+  useEffect(() => {
+    // A newly selected conversation should open at its latest message.
+    setAutoFollow(true);
+  }, [activeSessionId]);
+
+  useLayoutEffect(() => {
+    if (autoFollow && chatFeedRef.current) {
+      chatFeedRef.current.scrollTop = chatFeedRef.current.scrollHeight;
+    }
+  }, [activeSessionId, lastMessageContent, autoFollow]);
+
+  const handleChatFeedScroll = () => {
+    const feed = chatFeedRef.current;
+    if (!feed) return;
+    // Do not pull the reader away from older messages; resume auto-follow
+    // when they return to the bottom.
+    const distanceFromBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight;
+    setAutoFollow(distanceFromBottom < 48);
+  };
 
   if (!activeSession) {
+    const hasModel = models.length > 0;
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center bg-gray-900/20 border border-gray-800 p-8 rounded-xl">
         <AlertCircle className="w-12 h-12 text-gray-500 mb-3" />
         <h3 className="text-gray-300 font-bold">No Sessions Available</h3>
         <p className="text-xs text-gray-500 mt-1 max-w-sm">
-          Please create a new workspace session to start testing prompts and model generation.
+          {hasModel
+            ? "Please create a new workspace session to start testing prompts and model generation."
+            : "Deploy a model from the Models page before creating a workspace session."}
         </p>
         <button
-          onClick={() => onCreateSession(models[0]?.id || "gemini-3.5-flash")}
-          className="mt-4 px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-500 text-white rounded-lg transition-colors flex items-center gap-1.5"
+          onClick={() => hasModel && onCreateSession(models[0].id)}
+          disabled={!hasModel}
+          className="mt-4 px-4 py-2 text-xs font-semibold bg-sky-600 hover:bg-sky-500 disabled:bg-gray-700 disabled:text-gray-400 disabled:cursor-not-allowed text-white rounded-lg transition-colors flex items-center gap-1.5"
         >
-          <Plus className="w-4 h-4" /> Start New Workspace
+          <Plus className="w-4 h-4" /> {hasModel ? "Start New Workspace" : "Deploy a Model First"}
         </button>
       </div>
     );
@@ -100,53 +137,36 @@ export default function Playground({
 
     // Optimistically update frontend state
     onUpdateSessionMessages(activeSession.id, newMessages);
+    setAutoFollow(true);
     setInput("");
     setIsLoading(true);
 
-    // Simulate thinking if the active model is deepseek-r1
-    const modelObj = models.find((m) => m.id === activeSession.modelId);
-    const isReasoningModel = modelObj?.id.includes("deepseek") || modelObj?.id.includes("r1");
 
-    if (isReasoningModel) {
-      setShowThinking(true);
-      setThinkingProcess("Initializing deep-thought reasoning tree...\nAnalyzing prompt constraints and semantic bounds...");
-      setTimeout(() => {
-        setThinkingProcess(
-          (prev) =>
-            prev +
-            "\nReasoning path selected: Core math/logic framework.\nValidating SQL query outputs..."
-        );
-      }, 1000);
-    }
+
+    const assistantMessageId = "assistant_" + Date.now();
+    let accumulatedText = "";
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: newMessages,
-          modelId: activeSession.modelId,
-          temperature: activeSession.temperature,
-          maxTokens: activeSession.maxTokens,
-          systemInstruction: systemPrompt
-        })
+      const stream = streamChat({
+        messages: newMessages,
+        model: activeModelId,
+        session_id: activeSession.id,
+        temperature: activeSession.temperature,
+        max_tokens: activeSession.maxTokens,
+        top_p: activeSession.topP
       });
 
-      const data = await response.json();
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || "Failed to generate AI response.");
+      for await (const chunk of stream) {
+        accumulatedText += chunk;
+        
+        const assistantMessage: Message = {
+          id: assistantMessageId,
+          role: "assistant",
+          content: accumulatedText,
+          timestamp: new Date().toLocaleTimeString()
+        };
+        onUpdateSessionMessages(activeSession.id, [...newMessages, assistantMessage]);
       }
-
-      // Add assistant response to messages
-      const assistantMessage: Message = {
-        id: "assistant_" + Date.now(),
-        role: "assistant",
-        content: data.content,
-        timestamp: new Date().toLocaleTimeString()
-      };
-
-      onUpdateSessionMessages(activeSession.id, [...newMessages, assistantMessage]);
     } catch (err: any) {
       console.error(err);
       setErrorMsg(
@@ -182,7 +202,7 @@ export default function Playground({
           </h2>
           <button
             id="playground-new-session"
-            onClick={() => onCreateSession(models[0]?.id || "gemini-3.5-flash")}
+            onClick={() => onCreateSession(models[0]?.id || "llama3-8b-instruct")}
             className="p-1.5 bg-[#161618] border border-[#2c2c2e] text-white hover:bg-white hover:text-black rounded transition-all"
             title="Create New Session"
           >
@@ -210,7 +230,7 @@ export default function Playground({
                   {sess.title}
                 </p>
                 <span className="text-[9px] text-[#555555] font-mono block mt-0.5 uppercase tracking-wider">
-                  {models.find((m) => m.id === sess.modelId)?.name || "Gemini Flash"}
+                  {models.find((m) => m.id === sess.modelId)?.name || models[0]?.name || "Unknown Model"}
                 </span>
               </div>
               <button
@@ -281,7 +301,11 @@ export default function Playground({
         </div>
 
         {/* Message Feed container */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-sm">
+        <div
+          ref={chatFeedRef}
+          onScroll={handleChatFeedScroll}
+          className="flex-1 overflow-y-auto p-4 space-y-4 font-sans text-sm"
+        >
           {/* Default blank state info */}
           {activeSession.messages.filter((m) => m.role !== "system").length === 0 && (
             <div className="flex flex-col items-center justify-center h-full text-center text-[#888888] space-y-2">
@@ -407,7 +431,7 @@ export default function Playground({
           </label>
           <select
             id="playground-model-select"
-            value={activeSession.modelId}
+            value={activeModelId}
             onChange={(e) =>
               onUpdateSessionParams(activeSession.id, {
                 temperature: activeSession.temperature,

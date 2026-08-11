@@ -52,17 +52,18 @@ export const initialModels: Model[] = [
     description: "State-of-the-art reasoning model optimized for math, logic, and multi-step complex code generation."
   },
   {
-    id: "gemini-3.5-flash",
-    name: "Gemini 3.5 Flash",
+    id: "nvidia-ising-1.5-31b",
+    name: "NVIDIA Ising Calibration 1.5 31B",
     provider: "Cloud",
     type: "text",
-    contextWindow: 1048576,
-    parameters: "MoE",
-    latencyMs: 45,
+    contextWindow: 32768,
+    parameters: "31B",
+    latencyMs: 85,
     vramRequiredGb: 0,
-    rpmLimit: 2000,
+    rpmLimit: 1000,
     status: "Deployed",
-    description: "Google's lightweight, fast, and cost-efficient multimodal model with an industry-leading 1M token context window."
+    description: "NVIDIA's Ising Calibration 1.5 31B model via NVIDIA API. Pre-configured adapter code with standardized variable naming.",
+    adapterCode: `import requests\n\ninvoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"\n\nheaders = {\n    "Authorization": f"Bearer {api_key}",\n    "Accept": "application/json",\n}\n\npayload = {\n    "model": "nvidia/ising-calibration-1.5-31b",\n    "messages": messages,\n    "max_tokens": max_tokens,\n    "temperature": temperature,\n    "top_p": top_p,\n    "stream": False,\n}\n\nresp = requests.post(invoke_url, headers=headers, json=payload)\ndata = resp.json()\n\nif "choices" in data and len(data["choices"]) > 0:\n    response_text = data["choices"][0]["message"]["content"]\nelif "error" in data:\n    response_text = f"API Error: {data['error'].get('message', str(data['error']))}"\nelse:\n    response_text = f"Unexpected response format: {json.dumps(data)}"`
   },
   {
     id: "gpt-4o",
@@ -125,7 +126,7 @@ export const initialSessions: PlaygroundSession[] = [
   {
     id: "sess_2",
     title: "Customer Support Classifier",
-    modelId: "gemini-3.5-flash",
+    modelId: "llama3-8b-instruct",
     temperature: 0.1,
     maxTokens: 256,
     topP: 0.95,
@@ -280,7 +281,7 @@ export const initialWorkflows: Workflow[] = [
     steps: [
       { id: "s1_1", name: "Parse Error Context", type: "Condition", config: { regex: "(?i)exception|error" } },
       { id: "s1_2", name: "Query Semantic Memory", type: "Memory_Fetch", config: { lookup_tier: "Semantic", threshold: 0.75 } },
-      { id: "s1_3", name: "Generate Solution Proposal", type: "LLM", config: { model: "gemini-3.5-flash", temperature: 0.1 } },
+      { id: "s1_3", name: "Generate Solution Proposal", type: "LLM", config: { model: "llama3-8b-instruct", temperature: 0.1 } },
       { id: "s1_4", name: "Request Engineer Approval", type: "Human_Approval", config: { notification: "slack" } }
     ],
     status: "Active",
@@ -316,7 +317,7 @@ export const initialWorkflows: Workflow[] = [
 export const initialBenchmarks: BenchmarkResult[] = [
   { modelId: "llama3-8b-instruct", modelName: "Llama 3 8B Instruct", ttftMs: 28, tps: 84.5, latencyMs: 35, accuracy: 82.4, vramGb: 6.5, costPer1k: 0.0 },
   { modelId: "deepseek-r1-7b", modelName: "DeepSeek R1 7B", ttftMs: 140, tps: 42.1, latencyMs: 95, accuracy: 89.1, vramGb: 5.8, costPer1k: 0.0 },
-  { modelId: "gemini-3.5-flash", modelName: "Gemini 3.5 Flash", ttftMs: 45, tps: 110.2, latencyMs: 45, accuracy: 91.5, vramGb: 0.0, costPer1k: 0.000075 },
+  { modelId: "nvidia-ising-1.5-31b", modelName: "NVIDIA Ising 1.5 31B", ttftMs: 80, tps: 55.0, latencyMs: 85, accuracy: 90.2, vramGb: 0.0, costPer1k: 0.001 },
   { modelId: "gpt-4o", modelName: "GPT-4o", ttftMs: 90, tps: 78.4, latencyMs: 120, accuracy: 94.8, vramGb: 0.0, costPer1k: 0.0025 }
 ];
 
@@ -333,7 +334,7 @@ export const initialSettings: SystemSettings = {
   generalName: "OpenMind AI Platform",
   generalDesc: "High-performance AI model routing gateway, playground workspace, agent workflows manager, and local embedding retrieval core.",
   githubUrl: "https://github.com/openmind-org/openmind-console",
-  fallbackModelId: "gemini-3.5-flash",
+  fallbackModelId: "llama3-8b-instruct",
   sessionTimeoutMin: 60,
   apiKeys: [
     { id: "key_1", name: "Default Production Token", keyPrefix: "om_prod_k49ex", createdAt: "2026-07-10", lastUsed: "2026-07-19 22:10" },

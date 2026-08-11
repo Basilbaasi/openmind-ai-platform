@@ -38,7 +38,7 @@ export default function Orchestrator({
   const [formTrigger, setFormTrigger] = useState("");
   const [formSteps, setFormSteps] = useState<WorkflowStep[]>([
     { id: "step_1", name: "Parse Input Context", type: "Condition", config: {} },
-    { id: "step_2", name: "Execute LLM Logic", type: "LLM", config: { model: "gemini-3.5-flash" } }
+    { id: "step_2", name: "Execute LLM Logic", type: "LLM", config: { model: "llama3-8b-instruct" } }
   ]);
 
   const handleOpenAdd = () => {
@@ -48,7 +48,7 @@ export default function Orchestrator({
     setFormTrigger("API Endpoint Call");
     setFormSteps([
       { id: "step_1", name: "Parse Input Context", type: "Condition", config: {} },
-      { id: "step_2", name: "Execute LLM Logic", type: "LLM", config: { model: "gemini-3.5-flash" } }
+      { id: "step_2", name: "Execute LLM Logic", type: "LLM", config: { model: "llama3-8b-instruct" } }
     ]);
     setIsFormOpen(true);
   };

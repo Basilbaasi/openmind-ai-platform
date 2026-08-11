@@ -1,6 +1,6 @@
 """AI Model registry table."""
 
-from sqlalchemy import Float, Integer, String, Text
+from sqlalchemy import Boolean, Float, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
@@ -21,3 +21,8 @@ class ModelRecord(Base, UUIDMixin, TimestampMixin):
     rpm_limit: Mapped[int] = mapped_column(Integer, nullable=False, default=1000)
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="Offline")
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    # Provider adapter code — raw Python code executed at runtime
+    adapter_code: Mapped[str] = mapped_column(Text, nullable=True, default="")
+    # API key for this specific model provider
+    model_api_key: Mapped[str] = mapped_column(Text, nullable=True, default="")
