@@ -555,7 +555,7 @@ export default function App() {
               <Sparkles className="w-5 h-5 text-sky-500 animate-pulse" />
             )}
             <span className={`text-sm font-bold tracking-tight text-gray-100 uppercase ${settings.theme === "Sophisticated Dark" ? "font-serif tracking-[0.15em]" : "font-sans"}`}>
-              {settings.theme === "Sophisticated Dark" ? "ANTIGRAVITY" : "OpenMind AI"}
+              {settings.theme === "Sophisticated Dark" ? "OPENMIND" : "OpenMind AI"}
             </span>
           </div>
           <button

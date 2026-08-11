@@ -32,6 +32,7 @@ interface PlaygroundProps {
       presencePenalty: number;
       jsonMode: boolean;
       modelId: string;
+      title?: string;
     }
   ) => void;
 }

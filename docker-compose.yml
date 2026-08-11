@@ -99,6 +99,9 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    volumes:
+      - ./client:/app
+      - /app/node_modules
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "wget -q --spider http://localhost:3000 || exit 1"]
