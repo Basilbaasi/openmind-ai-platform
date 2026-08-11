@@ -259,8 +259,8 @@ export default function Playground({
               type="text"
               value={activeSession.title}
               onChange={(e) => {
-                activeSession.title = e.target.value;
                 onUpdateSessionParams(activeSession.id, {
+                  title: e.target.value,
                   temperature: activeSession.temperature,
                   maxTokens: activeSession.maxTokens,
                   topP: activeSession.topP,

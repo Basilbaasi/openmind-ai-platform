@@ -392,10 +392,24 @@ export default function App() {
     );
   };
 
-  const handleUpdateSessionParams = (sessionId: string, params: any) => {
+  const handleUpdateSessionParams = async (sessionId: string, params: any) => {
     setSessions(
       sessions.map((s) => (s.id === sessionId ? { ...s, ...params } : s))
     );
+    try {
+      const payload: any = {};
+      if (params.title !== undefined) payload.title = params.title;
+      if (params.modelId !== undefined) payload.model_id = params.modelId;
+      if (params.temperature !== undefined) payload.temperature = params.temperature;
+      if (params.maxTokens !== undefined) payload.max_tokens = params.maxTokens;
+      if (params.topP !== undefined) payload.top_p = params.topP;
+      if (params.presencePenalty !== undefined) payload.presence_penalty = params.presencePenalty;
+      if (params.jsonMode !== undefined) payload.json_mode = params.jsonMode;
+
+      await sessionsApi.update(sessionId, payload);
+    } catch (err) {
+      console.error("Failed to update session parameters on backend:", err);
+    }
   };
 
   const handleAddApiLog = (newLog: ApiRequestLog) => {
