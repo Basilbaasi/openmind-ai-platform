@@ -24,6 +24,14 @@ Working with AI models means juggling multiple providers, testing different conf
 
 ---
 
+## 📸 Screenshots
+
+| AI Playground | Model Registry | Chat Sessions |
+|:---:|:---:|:---:|
+| [![Playground](screenshots/Playground.png)](screenshots/Playground.png) | [![Model Registry](screenshots/Models.png)](screenshots/Models.png) | [![Sessions](screenshots/Sessions.png)](screenshots/Sessions.png) |
+
+---
+
 ## 🏗️ Architecture
 
 ```
