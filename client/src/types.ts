@@ -29,6 +29,7 @@ export interface Model {
   adapterCode?: string;        // Python adapter code for this model's provider
   modelApiKey?: string;        // API key for this specific model (stored per-model)
   modelApiKeyMasked?: string;  // Masked API key display from server
+  localRunCommand?: string;    // Docker run command for locally partitioned container
 }
 
 export interface Message {

@@ -36,6 +36,7 @@ export const modelsApi = {
   create: (data: any) => request<any>('/models', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: any) => request<any>(`/models/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) => request<void>(`/models/${id}`, { method: 'DELETE' }),
+  testAdapter: (data: any) => request<any>('/models/test-adapter', { method: 'POST', body: JSON.stringify(data) }),
 };
 
 // ── Sessions ────────────────────────────────────────────────────

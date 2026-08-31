@@ -47,8 +47,9 @@ class ModelService:
         """Creates a new model record and saves its adapter code to a file."""
         adapter_code = data.get("adapter_code", "")
         model_id = data.get("id", "")
+        model_type = data.get("type", "text")
         if adapter_code.strip():
-            validate_adapter_code(adapter_code)
+            validate_adapter_code(adapter_code, model_type=model_type)
         record = await self.repo.create(**data)
 
         # Save adapter code to file named by model ID
@@ -61,7 +62,11 @@ class ModelService:
         """Updates an existing model record and its adapter code file."""
         adapter_code = data.get("adapter_code")
         if adapter_code is not None and adapter_code.strip():
-            validate_adapter_code(adapter_code)
+            model_type = data.get("type")
+            if not model_type:
+                existing = await self.repo.get_by_id(model_id)
+                model_type = existing.type if existing else "text"
+            validate_adapter_code(adapter_code, model_type=model_type)
         record = await self.repo.update(model_id, **data)
         if record is None:
             return None

@@ -36,13 +36,40 @@ logger = logging.getLogger(__name__)
 ADAPTERS_DIR = os.path.join(os.path.dirname(__file__), "saved")
 
 
-def validate_adapter_code(adapter_code: str) -> None:
+def validate_embedding_adapter_code(adapter_code: str) -> None:
+    """Validate embedding adapter contract before deployment."""
+    try:
+        tree = ast.parse(adapter_code)
+    except SyntaxError as exc:
+        raise ValueError(
+            f"Embedding adapter code has a syntax error on line {exc.lineno}: {exc.msg}"
+        ) from exc
+
+    referenced_names = {node.id for node in ast.walk(tree) if isinstance(node, ast.Name)}
+    missing = {"api_key", "input"} - referenced_names
+    if missing:
+        raise ValueError(
+            "Embedding adapter code must use the injected variable(s): " + ", ".join(sorted(missing)) + "."
+        )
+
+    disallowed = {"messages", "user_message", "temperature", "max_tokens", "top_p", "stream", "response_text"} & referenced_names
+    if disallowed:
+        raise ValueError(
+            f"Embedding adapters must not use chat-completion variable(s): {', '.join(sorted(disallowed))}."
+        )
+
+
+def validate_adapter_code(adapter_code: str, model_type: str = "text") -> None:
     """Validate the platform adapter contract before a model is deployed.
 
     Provider payloads may differ, but adapters must consume the same injected
-    runtime variables. The platform owns ``stream`` and switches it for each
-    request, so user code must not overwrite it.
+    runtime variables. For LLMs, the platform owns ``stream`` and switches it for each
+    request. For embedding models, ``input`` and ``input_type`` are consumed.
     """
+    if model_type == "embedding":
+        validate_embedding_adapter_code(adapter_code)
+        return
+
     try:
         tree = ast.parse(adapter_code)
     except SyntaxError as exc:
@@ -402,6 +429,72 @@ def execute_model_adapter(
         return "Warning: Adapter code executed successfully but no response text could be extracted. Make sure your code sets `response_text` or prints/contains the response."
 
     return str(result)
+
+
+def execute_embedding_adapter(
+    adapter_code: str,
+    api_key: str,
+    input_data: list[str] | str,
+    input_type: str = "query",
+) -> list[list[float]]:
+    """
+    Execute an embedding model's adapter code and return embedding vectors.
+
+    Injected runtime variables:
+      - api_key    : str       — Model's provider API key
+      - input      : list[str] — List of text strings to embed
+      - input_type : str       — 'query' or 'passage'
+
+    Output variable:
+      - embeddings : list[list[float]] — One embedding vector per input string
+    """
+    if not adapter_code or not adapter_code.strip():
+        raise ValueError("No adapter code configured for this embedding model.")
+
+    if isinstance(input_data, str):
+        input_list = [input_data]
+    else:
+        input_list = list(input_data)
+
+    exec_globals = {
+        "__builtins__": __builtins__,
+        "requests": requests,
+        "base64": base64,
+        "json": json,
+        "api_key": api_key,
+        "input": input_list,
+        "input_type": input_type,
+        "embeddings": None,
+    }
+
+    stdout_buffer = io.StringIO()
+    try:
+        with redirect_stdout(stdout_buffer):
+            exec(adapter_code, exec_globals)  # noqa: S102
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        logger.error("Embedding adapter execution failed:\n%s", error_trace)
+        raise RuntimeError(f"Error executing embedding adapter:\n{error_trace}") from e
+
+    embeddings = exec_globals.get("embeddings")
+
+    # Fallback extraction from response object
+    if embeddings is None:
+        response_obj = exec_globals.get("response")
+        if response_obj is not None and hasattr(response_obj, "json"):
+            try:
+                data = response_obj.json()
+                if "data" in data and isinstance(data["data"], list):
+                    embeddings = [item["embedding"] for item in data["data"] if "embedding" in item]
+                elif "embeddings" in data:
+                    embeddings = data["embeddings"]
+            except Exception:
+                pass
+
+    if embeddings is None:
+        raise ValueError("The adapter code did not assign 'embeddings' (list of vectors).")
+
+    return embeddings
 
 
 def extract_text_from_chunk(printed_line: str) -> str:

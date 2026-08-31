@@ -1,0 +1,14 @@
+FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+
+WORKDIR /app
+
+# Pre-install dependencies with UV
+RUN uv pip install --system --extra-index-url https://download.pytorch.org/whl/cpu torch fastapi uvicorn sentence-transformers
+
+COPY embed_server.py /app/embed_server.py
+
+ENV MODEL_NAME="BAAI/bge-small-en-v1.5"
+
+EXPOSE 8001
+
+CMD ["python", "/app/embed_server.py"]

@@ -78,7 +78,9 @@ Working with AI models means juggling multiple providers, testing different conf
 |---------|--------|-------------|
 | **AI Playground** | ✅ Live | Multi-session chat with configurable temperature, top_p, max_tokens, system prompts, and JSON mode |
 | **SSE Streaming** | ✅ Live | Real-time token-by-token response streaming (OpenAI SSE protocol) |
-| **Model Registry** | ✅ Live | Register, track, and compare local & cloud AI models (Llama 3, Gemini, GPT-4o, DeepSeek, CLIP, BGE) |
+| **Model Registry & Adapters** | ✅ Live | Deploy, test, and adapt any LLM or Dense Vector Embedding model (Gemini, NVIDIA NIM, HuggingFace, Ollama, vLLM) |
+| **Universal Embedding Microserver** | ✅ Live | Built-in zero-wait runner (`embed_server.py` / `openmind-embed-server:latest`) for `BAAI/bge-small-en-v1.5`, `BAAI/bge-m3`, `all-MiniLM-L6-v2` |
+| **All-in-One Generator Prompt** | ✅ Live | 1-click generator to convert any HuggingFace/NIM model into executable Docker scripts and Python adapter code |
 | **Model Benchmarks** | ✅ Live | Compare TTFT, TPS, latency, accuracy, VRAM usage, and cost per 1K tokens |
 | **OpenAI Gateway** | ✅ Live | OpenAI-compatible `/chat/completions` and `/embeddings` endpoints with Bearer auth |
 | **API Key Management** | ✅ Live | Secure key generation with bcrypt hashing and prefix-based fast lookup |
@@ -87,9 +89,9 @@ Working with AI models means juggling multiple providers, testing different conf
 | Feature | Status | Description |
 |---------|--------|-------------|
 | **Document Ingestion** | ✅ Live | Upload PDF, Markdown, TXT files with automatic text extraction |
-| **Text Chunking** | ✅ Live | Character-based chunking for RAG preparation |
-| **Vector Embeddings** | 🚧 In Progress | pgvector infrastructure installed, real embedding generation planned |
-| **Semantic Retrieval** | 🚧 Planned | Embedding-based semantic search over knowledge sources |
+| **Text Chunking** | ✅ Live | Character and semantic chunking for RAG preparation |
+| **Vector Embeddings** | ✅ Live | Real dense vector embeddings powered by deployed embedding adapters (BGE, Nemotron, OpenAI, etc.) stored in pgvector |
+| **Semantic Retrieval** | ✅ Live | Cosine & vector similarity search over chunked knowledge sources |
 
 ### Memory & Orchestration
 | Feature | Status | Description |
@@ -99,15 +101,28 @@ Working with AI models means juggling multiple providers, testing different conf
 | **Workflow Definitions** | ✅ Live | Define multi-step workflows with LLM, Condition, API Call, Memory Fetch, Human Approval steps |
 | **Workflow Execution** | 🚧 In Progress | Step execution engine (currently simulated, real execution planned) |
 
-### Platform Infrastructure
-| Feature | Status | Description |
-|---------|--------|-------------|
-| **System Monitoring** | ✅ Live | Real-time CPU, RAM, DB health, and uptime tracking |
-| **Structured Logging** | ✅ Live | JSON/text logging via structlog with severity filtering |
-| **Session Management** | ✅ Live | Persistent chat sessions with full message history |
-| **Docker Deployment** | ✅ Live | Multi-stage Dockerfile + Docker Compose with PostgreSQL |
-| **CI/CD Pipeline** | ✅ Live | GitHub Actions with linting (Ruff), type checking (mypy), and testing (pytest) |
-| **Test Suite** | ✅ Live | 59+ unit and integration tests |
+---
+
+## ⚡ Self-Hosting Local Embedding Models (HuggingFace / BGE / NIM)
+
+OpenMind includes a **Universal Embedding Microserver** (`embed_server.py`) and pre-built Docker image to self-host any HuggingFace embedding model locally on port `8001`.
+
+### 1. Run BAAI/bge-small-en-v1.5 (or any HuggingFace model)
+
+```powershell
+# Run the pre-built instant image:
+docker run -it --rm -p 8001:8001 -e MODEL_NAME="BAAI/bge-small-en-v1.5" openmind-embed-server:latest
+
+# Or run directly via Python:
+$env:MODEL_NAME = "BAAI/bge-small-en-v1.5"
+python embed_server.py
+```
+
+### 2. Connect in OpenMind
+1. In OpenMind (**http://localhost:3000**), click **Deploy** → **Embedding Model**.
+2. Click **"Use BGE-Small (HuggingFace)"** or click **"Copy All-in-One Prompt"** for any custom model.
+3. Click **"Check Port 8001"** (turns `🟢 Port 8001 Online`).
+4. Click **"Run Embedding Test"** to inspect live vectors → Click **"Deploy Embedding Model"**!
 
 ---
 

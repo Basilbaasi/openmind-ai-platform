@@ -50,3 +50,4 @@ api_router.include_router(monitoring.router, prefix="/api/status", tags=["Monito
 
 # ── API Gateway (OpenAI-compatible) ──────────────────────────────
 api_router.include_router(gateway.router, prefix="/api/v1", tags=["API Gateway"])
+api_router.include_router(gateway.router, prefix="/v1", tags=["API Gateway (/v1)"])

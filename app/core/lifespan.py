@@ -57,8 +57,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 await conn.execute(text("ALTER TABLE knowledge_sources ADD COLUMN embedding_model VARCHAR(255)"))
             else:
                 await conn.execute(text("ALTER TABLE knowledge_sources ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(255)"))
+                await conn.execute(text("ALTER TABLE models ALTER COLUMN execution_mode DROP NOT NULL"))
         except Exception:
-            pass  # Column already exists
+            pass  # Already altered or column not present
     logger.info("database_initialized", url=settings.DATABASE_URL.split("@")[-1])
 
     yield  # ← Application is running and serving requests
