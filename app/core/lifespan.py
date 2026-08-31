@@ -45,11 +45,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Database – create tables if they don't exist (dev convenience)
     # Import all models so Base.metadata knows about them
     import app.models  # noqa: F401
+    from sqlalchemy import text
     from app.core.database import engine
     from app.models.base import Base
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Idempotently ensure new columns exist in existing PostgreSQL/SQLite tables
+        try:
+            if settings.DATABASE_URL.startswith("sqlite"):
+                await conn.execute(text("ALTER TABLE knowledge_sources ADD COLUMN embedding_model VARCHAR(255)"))
+            else:
+                await conn.execute(text("ALTER TABLE knowledge_sources ADD COLUMN IF NOT EXISTS embedding_model VARCHAR(255)"))
+        except Exception:
+            pass  # Column already exists
     logger.info("database_initialized", url=settings.DATABASE_URL.split("@")[-1])
 
     yield  # ← Application is running and serving requests

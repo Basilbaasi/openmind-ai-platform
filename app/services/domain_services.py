@@ -41,6 +41,7 @@ class KnowledgeService:
                 "status": r.status,
                 "progress": r.progress,
                 "createdAt": r.created_at.isoformat() if r.created_at else "",
+                "embeddingModel": r.embedding_model or "",
             }
             for r in records
         ]
@@ -57,6 +58,7 @@ class KnowledgeService:
             "status": record.status,
             "progress": record.progress,
             "createdAt": record.created_at.isoformat() if record.created_at else "",
+            "embeddingModel": record.embedding_model or "",
         }
 
     async def delete_source(self, source_id: str) -> bool:

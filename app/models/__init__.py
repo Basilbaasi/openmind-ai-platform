@@ -9,6 +9,7 @@ from app.models.api_key import ApiKeyRecord
 from app.models.base import Base
 from app.models.benchmark import BenchmarkRecord
 from app.models.knowledge import KnowledgeSourceRecord
+from app.models.knowledge_chunk import KnowledgeChunkRecord
 from app.models.log_entry import LogEntryRecord
 from app.models.memory import MemoryConnectionRecord, MemoryNodeRecord
 from app.models.memory_log import MemoryLogRecord
@@ -29,6 +30,7 @@ __all__ = [
     "MemoryConnectionRecord",
     "MemoryLogRecord",
     "KnowledgeSourceRecord",
+    "KnowledgeChunkRecord",
     "WorkflowRecord",
     "WorkflowStepRecord",
     "SystemSettingRecord",

@@ -1,7 +1,7 @@
 """Knowledge base / document source table."""
 
 from sqlalchemy import Float, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, UUIDMixin
 
@@ -19,3 +19,12 @@ class KnowledgeSourceRecord(Base, UUIDMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(50), nullable=False, default="Processing")
     progress: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     file_path: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Child chunks extracted from this document
+    chunks: Mapped[list["KnowledgeChunkRecord"]] = relationship(  # noqa: F821
+        back_populates="source",
+        foreign_keys="KnowledgeChunkRecord.source_id",
+        cascade="all, delete-orphan",
+    )
+

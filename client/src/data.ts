@@ -221,56 +221,11 @@ export const initialApiLogs: ApiRequestLog[] = [
   }
 ];
 
-export const initialMemoryNodes: MemoryNode[] = [
-  { id: "mem_1", label: "Semantic Search Project", tier: "Semantic", category: "Project", timestamp: "2026-07-19 12:00", value: "Focuses on deploying dense retrievers combined with re-ranking filters.", connections: ["mem_2", "mem_3"] },
-  { id: "mem_2", label: "Llama 3 Local Host", tier: "Conversation", category: "Infrastructure", timestamp: "2026-07-19 12:05", value: "Running Llama 3 8B locally on CUDA 12.2, drawing ~120W, quantized to Q4_K_M.", connections: ["mem_1"] },
-  { id: "mem_3", label: "Knowledge Chunk Size", tier: "Long-Term", category: "Parameter", timestamp: "2026-07-19 10:15", value: "Determined 512-character overlapping chunks work best for technical documentation retrieval.", connections: ["mem_1", "mem_4"] },
-  { id: "mem_4", label: "BGE Large EN Model", tier: "Semantic", category: "Model", timestamp: "2026-07-19 11:22", value: "BGE Large EN v1.5 offers the best cross-encoder similarity accuracy.", connections: ["mem_3"] },
-  { id: "mem_5", label: "Auth Token Rotation", tier: "Conversation", category: "Security", timestamp: "2026-07-19 14:01", value: "API keys rotate every 30 days. Fallback keys are triggered if key validation throws 401.", connections: [] }
-];
+export const initialMemoryNodes: MemoryNode[] = [];
 
-export const initialMemoryLogs: MemoryLog[] = [
-  { id: "mlog_1", timestamp: "2026-07-19 14:32:10", tier: "Conversation", operation: "Write", text: "Successfully captured user's SQL preference and cached in session memory." },
-  { id: "mlog_2", timestamp: "2026-07-19 14:30:15", tier: "Semantic", operation: "Read", text: "Query 'dense retrieval' hit node 'Semantic Search Project' with cosine similarity score: 0.89." },
-  { id: "mlog_3", timestamp: "2026-07-19 12:15:00", tier: "Long-Term", operation: "Consolidate", text: "Consolidated 15 similar conversation sessions into core Long-Term node 'Llama 3 Local Host' after clustering analysis." },
-  { id: "mlog_4", timestamp: "2026-07-19 09:00:23", tier: "Semantic", operation: "Prune", text: "Pruned 3 stale short-term nodes (decay threshold > 0.85)." }
-];
+export const initialMemoryLogs: MemoryLog[] = [];
 
-export const initialSources: IngestedSource[] = [
-  {
-    id: "src_1",
-    name: "API_v1_Documentation.pdf",
-    type: "PDF",
-    sizeBytes: 1542000,
-    chunksCount: 154,
-    embeddingSize: 1024,
-    status: "Indexed",
-    progress: 100,
-    createdAt: "2026-07-18 16:30"
-  },
-  {
-    id: "src_2",
-    name: "System_Architecture_Layout.md",
-    type: "Markdown",
-    sizeBytes: 42300,
-    chunksCount: 12,
-    embeddingSize: 1024,
-    status: "Indexed",
-    progress: 100,
-    createdAt: "2026-07-19 09:12"
-  },
-  {
-    id: "src_3",
-    name: "GPU_Cluster_Setup_Notes.txt",
-    type: "Text",
-    sizeBytes: 840000,
-    chunksCount: 84,
-    embeddingSize: 1024,
-    status: "Processing",
-    progress: 45,
-    createdAt: "2026-07-19 22:15"
-  }
-];
+export const initialSources: IngestedSource[] = [];
 
 export const initialWorkflows: Workflow[] = [
   {

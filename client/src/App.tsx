@@ -426,28 +426,108 @@ export default function App() {
     handleAddLogEntry("API_GATEWAY", "Cleared internal request logger history.", "INFO");
   };
 
-  const handleAddSource = (newSrc: IngestedSource) => {
-    setSources([newSrc, ...sources]);
-    handleAddLogEntry("INGEST_PIPE", `Indexed document '${newSrc.name}' and registered embeddings.`, "INFO");
+  const handleAddSource = async (newSrc: IngestedSource) => {
+    setSources((prev) => [newSrc, ...prev]);
+    handleAddLogEntry(
+      "INGEST_PIPE",
+      `Indexed document '${newSrc.name}' (${newSrc.chunksCount} chunks, model: ${newSrc.embeddingModel || "Default"}).`,
+      "INFO"
+    );
 
-    // Add to memory nodes automatically
-    const newNode: MemoryNode = {
-      id: "mem_" + Date.now(),
-      label: newSrc.name.replace(/\.[^/.]+$/, ""),
-      tier: "Semantic",
-      category: "Document",
-      timestamp: new Date().toLocaleTimeString(),
-      value: `Dense vectors indexed from document. Chunk size: ${newSrc.chunksCount}`,
-      connections: []
-    };
-    setMemoryNodes([newNode, ...memoryNodes]);
+    // Automatically create a persistent semantic memory node for this document
+    try {
+      const createdNode = await memoryApi.createNode({
+        label: newSrc.name.replace(/\.[^/.]+$/, ""),
+        tier: "Semantic",
+        category: "Document",
+        value: `Semantic chunks indexed from document (${newSrc.chunksCount} chunks, model: ${newSrc.embeddingModel || "Default"}).`,
+        connections: []
+      });
+      const newNode: MemoryNode = {
+        id: createdNode.id,
+        label: createdNode.label,
+        tier: createdNode.tier,
+        category: createdNode.category,
+        timestamp: createdNode.timestamp || new Date().toLocaleTimeString(),
+        value: createdNode.value,
+        connections: createdNode.connections || []
+      };
+      setMemoryNodes((prev) => [newNode, ...prev]);
+    } catch (err) {
+      console.warn("Failed to create memory node for document:", err);
+      const fallbackNode: MemoryNode = {
+        id: "mem_" + Date.now(),
+        label: newSrc.name.replace(/\.[^/.]+$/, ""),
+        tier: "Semantic",
+        category: "Document",
+        timestamp: new Date().toLocaleTimeString(),
+        value: `Semantic chunks indexed from document (${newSrc.chunksCount} chunks).`,
+        connections: []
+      };
+      setMemoryNodes((prev) => [fallbackNode, ...prev]);
+    }
   };
 
-  const handleDeleteSource = (id: string) => {
+  const handleDeleteSource = async (id: string) => {
     const target = sources.find((s) => s.id === id);
-    setSources(sources.filter((s) => s.id !== id));
+    try {
+      await knowledgeApi.delete(id);
+    } catch (err) {
+      console.error("Failed to delete knowledge source from backend:", err);
+    }
+    setSources((prev) => prev.filter((s) => s.id !== id));
     if (target) {
-      handleAddLogEntry("INGEST_PIPE", `Tore down index vectors for document: '${target.name}'`, "WARN");
+      handleAddLogEntry("INGEST_PIPE", `Tore down index vectors and deleted chunks for document: '${target.name}'`, "WARN");
+    }
+  };
+
+  const handleAddMemoryNode = async (node: MemoryNode) => {
+    try {
+      const created = await memoryApi.createNode({
+        label: node.label,
+        tier: node.tier,
+        category: node.category,
+        value: node.value,
+        connections: node.connections || []
+      });
+      setMemoryNodes((prev) => [
+        {
+          id: created.id,
+          label: created.label,
+          tier: created.tier,
+          category: created.category,
+          timestamp: created.timestamp || new Date().toLocaleTimeString(),
+          value: created.value,
+          connections: created.connections || []
+        },
+        ...prev
+      ]);
+    } catch (err) {
+      console.error("Failed to save memory node to backend:", err);
+      setMemoryNodes((prev) => [node, ...prev]);
+    }
+  };
+
+  const handleAddMemoryLog = async (log: MemoryLog) => {
+    try {
+      const created = await memoryApi.createLog({
+        tier: log.tier,
+        operation: log.operation,
+        text: log.text
+      });
+      setMemoryLogs((prev) => [
+        {
+          id: created.id,
+          timestamp: created.timestamp || new Date().toLocaleTimeString(),
+          tier: created.tier,
+          operation: created.operation,
+          text: created.text
+        },
+        ...prev
+      ]);
+    } catch (err) {
+      console.error("Failed to save memory log to backend:", err);
+      setMemoryLogs((prev) => [log, ...prev]);
     }
   };
 
@@ -690,13 +770,18 @@ export default function App() {
             <MemoryComponent
               nodes={memoryNodes}
               logs={memoryLogs}
-              onAddNode={(n) => setMemoryNodes([n, ...memoryNodes])}
-              onAddLog={(l) => setMemoryLogs([l, ...memoryLogs])}
+              onAddNode={handleAddMemoryNode}
+              onAddLog={handleAddMemoryLog}
             />
           )}
 
           {activeTab === "knowledge" && (
-            <KnowledgeComponent sources={sources} onAddSource={handleAddSource} onDeleteSource={handleDeleteSource} />
+            <KnowledgeComponent
+              sources={sources}
+              models={models}
+              onAddSource={handleAddSource}
+              onDeleteSource={handleDeleteSource}
+            />
           )}
 
           {activeTab === "orchestrator" && (

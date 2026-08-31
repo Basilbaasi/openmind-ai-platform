@@ -113,10 +113,11 @@ export async function* streamChat(data: any): AsyncGenerator<string, void, unkno
 export const knowledgeApi = {
   list: () => request<any[]>('/knowledge'),
   create: (data: any) => request<any>('/knowledge', { method: 'POST', body: JSON.stringify(data) }),
-  upload: async (file: File): Promise<any> => {
+  upload: async (file: File, embeddingModel: string = ''): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${BASE_URL}/knowledge/upload`, {
+    const params = embeddingModel ? `?embedding_model=${encodeURIComponent(embeddingModel)}` : '';
+    const response = await fetch(`${BASE_URL}/knowledge/upload${params}`, {
       method: 'POST',
       body: formData,
     });
@@ -126,6 +127,9 @@ export const knowledgeApi = {
     }
     return response.json();
   },
+  getChunks: (sourceId: string) => request<any[]>(`/knowledge/${sourceId}/chunks`),
+  search: (query: string, limit: number = 10) =>
+    request<any[]>(`/knowledge/search?q=${encodeURIComponent(query)}&limit=${limit}`),
   delete: (id: string) => request<void>(`/knowledge/${id}`, { method: 'DELETE' }),
 };
 

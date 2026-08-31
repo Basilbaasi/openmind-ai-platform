@@ -9,6 +9,9 @@
 # ── Stage 1: Builder ─────────────────────────────────────────────
 FROM python:3.11-slim AS builder
 
+# Copy uv binary from the official Astral image for high-speed package installation
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /build
 
 # Install build tools needed by some wheels (e.g., cryptography)
@@ -18,9 +21,9 @@ RUN apt-get update && \
 
 COPY requirements.txt .
 
-RUN python -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir --upgrade pip && \
-    /opt/venv/bin/pip install --no-cache-dir -r requirements.txt
+# Create virtual-env and install dependencies using uv pip
+RUN uv venv /opt/venv && \
+    uv pip install --python /opt/venv/bin/python --no-cache -r requirements.txt
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────
 FROM python:3.11-slim AS runtime

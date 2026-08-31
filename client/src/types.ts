@@ -92,6 +92,7 @@ export interface IngestedSource {
   status: "Indexed" | "Processing" | "Failed";
   progress: number;
   createdAt: string;
+  embeddingModel?: string;
 }
 
 export interface WorkflowStep {
