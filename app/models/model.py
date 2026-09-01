@@ -24,5 +24,7 @@ class ModelRecord(Base, UUIDMixin, TimestampMixin):
 
     # Provider adapter code — raw Python code executed at runtime
     adapter_code: Mapped[str] = mapped_column(Text, nullable=True, default="")
+    # Local Docker / Terminal startup command
+    local_run_command: Mapped[str] = mapped_column(Text, nullable=True, default="")
     # API key for this specific model provider
     model_api_key: Mapped[str] = mapped_column(Text, nullable=True, default="")

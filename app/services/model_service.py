@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.model_adapters.executor import (
     delete_adapter_file,
+    get_saved_adapter_code,
     save_adapter_file,
     validate_adapter_code,
 )
@@ -28,12 +29,12 @@ class ModelService:
         self.repo = ModelRepository(session)
 
     async def list_models(self) -> list[ModelMetadata]:
-        """Retrieves all models from the database."""
-        records = await self.repo.get_all(limit=200)
+        """Lists all registered models with their metadata."""
+        records = await self.repo.get_all()
         return [self._to_schema(r) for r in records]
 
     async def get_model(self, model_id: str) -> ModelMetadata | None:
-        """Retrieves a single model by ID."""
+        """Retrieves a single model's metadata by its ID."""
         record = await self.repo.get_by_id(model_id)
         if record is None:
             return None
@@ -88,6 +89,8 @@ class ModelService:
     def _to_schema(record: ModelRecord) -> ModelMetadata:
         """Convert an ORM record to the API response schema."""
         raw_key = record.model_api_key or ""
+        code = record.adapter_code or get_saved_adapter_code(record.id) or ""
+        cmd = getattr(record, "local_run_command", "") or ""
         return ModelMetadata(
             id=record.id,
             name=record.name,
@@ -103,6 +106,7 @@ class ModelService:
             rpm_limit=record.rpm_limit or 1000,
             status=record.status or "Deployed",
             description=record.description or "",
-            adapter_code=record.adapter_code or "",
+            adapter_code=code,
+            local_run_command=cmd,
             model_api_key_masked=_mask_api_key(raw_key),
         )

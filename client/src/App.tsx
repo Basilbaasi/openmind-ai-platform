@@ -76,6 +76,7 @@ const modelFromApi = (model: any): Model => ({
   status: model.status ?? "Offline",
   description: model.description ?? "",
   adapterCode: model.adapter_code ?? "",
+  localRunCommand: model.local_run_command ?? "",
   modelApiKeyMasked: model.model_api_key_masked ?? "",
 });
 
@@ -280,6 +281,7 @@ export default function App() {
         status: newModel.status,
         description: newModel.description,
         adapter_code: newModel.adapterCode || "",
+        local_run_command: newModel.localRunCommand || "",
         model_api_key: newModel.modelApiKey || ""
       });
       const savedModel = modelFromApi(created);
@@ -308,6 +310,7 @@ export default function App() {
         status: updatedModel.status,
         description: updatedModel.description,
         adapter_code: updatedModel.adapterCode || "",
+        local_run_command: updatedModel.localRunCommand || "",
         ...(updatedModel.modelApiKey ? { model_api_key: updatedModel.modelApiKey } : {})
       });
       const savedModel = modelFromApi(updated);

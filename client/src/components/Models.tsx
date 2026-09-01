@@ -462,7 +462,7 @@ export default function Models({
     setFormVram(model.vramRequiredGb);
     setFormRpm(model.rpmLimit);
     setFormDesc(model.description);
-    setFormLocalRunCommand(model.localRunCommand || (model.provider === "Local" && model.type === "embedding" ? DEFAULT_NEMOTRON_DOCKER_CMD : ""));
+    setFormLocalRunCommand(model.localRunCommand || "");
     setFormApiKey(model.modelApiKey || "");
     setFormAdapterCode(model.adapterCode || "");
     setShowApiKey(false);

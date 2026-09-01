@@ -14,6 +14,7 @@ class ModelCreateRequest(BaseModel):
     status: str = Field("Deployed", description="Status (Deployed, Offline, Syncing)")
     description: str = Field("", description="Detailed model description")
     adapter_code: str = Field("", description="Python adapter code for executing this model")
+    local_run_command: str = Field("", description="Local Docker/Terminal startup command")
     model_api_key: str = Field("", description="API key for this specific model provider")
 
 
@@ -29,6 +30,7 @@ class ModelUpdateRequest(BaseModel):
     status: str | None = None
     description: str | None = None
     adapter_code: str | None = None
+    local_run_command: str | None = None
     model_api_key: str | None = None
 
 
@@ -63,6 +65,7 @@ class ModelMetadata(BaseModel):
     status: str = Field("Deployed", description="Status")
     description: str = Field("", description="Description")
     adapter_code: str = Field("", description="Python adapter code for this model")
+    local_run_command: str = Field("", description="Local Docker/Terminal startup command")
     model_api_key_masked: str = Field("", description="Masked API key (e.g., '••••ab12')")
 
 
